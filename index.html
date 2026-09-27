@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Palette Squares</title>
+<style>
+  :root{
+    --bg:#121110; --panel:#1a1917; --panel2:#201f1c; --line:#332f29;
+    --text:#ece7de; --muted:#9c948a; --accent:#e8952f; --neutral:#e7e2d8;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  header{padding:26px 24px 0; max-width:1600px; margin:0 auto;}
+  header h1{margin:0; font-size:22px; font-weight:600;}
+  header p{margin:6px 0 14px; color:var(--muted); font-size:14px; max-width:66ch;}
+  .tabs{display:flex; gap:4px; border-bottom:1px solid var(--line);}
+  .tab-btn{background:none; border:none; color:var(--muted); font-size:13.5px; font-weight:600; padding:10px 6px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;}
+  .tab-btn.active{color:var(--accent); border-bottom-color:var(--accent);}
+
+  .view{display:none; max-width:1600px; margin:0 auto; padding:20px 24px 60px; grid-template-columns:300px 1fr; gap:20px;}
+  .view.active{display:grid;}
+  @media (max-width:820px){ .view{grid-template-columns:1fr;} }
+
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; align-self:start;}
+  .drop{border:1.5px dashed var(--line); border-radius:8px; padding:22px 12px; text-align:center; color:var(--muted); font-size:13px; cursor:pointer;}
+  .drop.over{border-color:var(--accent); color:var(--text);}
+  .drop strong{color:var(--text); display:block; margin-bottom:2px; font-size:14px;}
+  .field{margin-top:16px;}
+  .field label{display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-bottom:6px;}
+  .field input[type=number], .field input[type=text]{width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:7px 9px; font-size:13px;}
+  .field input[type=color]{width:100%; height:34px; padding:2px; border:1px solid var(--line); border-radius:6px; background:none; cursor:pointer;}
+  input[type=range]{width:100%; accent-color:var(--accent);}
+  .palette{margin-top:18px;}
+  .palette-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+  .palette-head label{font-size:12.5px; color:var(--muted);}
+  .palette-head button{background:none; border:1px solid var(--line); color:var(--accent); border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer;}
+  .row{display:flex; align-items:center; gap:6px; margin-bottom:6px;}
+  .row input[type=color]{width:28px; height:28px; padding:0; border:1px solid var(--line); border-radius:6px; background:none; cursor:pointer;}
+  .row input[type=text]{width:74px; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:6px 7px; font-size:12.5px;}
+  .row input[type=number]{flex:1; min-width:0; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:6px 7px; font-size:12.5px;}
+  .row button{background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:0 4px;}
+  .row button:hover{color:#c85a4a;}
+  .hint{font-size:11.5px; color:var(--muted); margin:8px 0 0; line-height:1.5;}
+  .hint.warn{color:var(--accent);}
+  .check{display:flex; align-items:center; gap:8px; font-size:13px; margin-top:16px; cursor:pointer;}
+  .check input{accent-color:var(--accent); width:16px; height:16px;}
+
+  button.primary, button.ghost{width:100%; margin-top:14px; padding:10px; border-radius:7px; font-size:13.5px; font-weight:600; cursor:pointer; border:1px solid transparent; text-align:center;}
+  button.primary{background:var(--accent); color:#171310;}
+  button.primary:hover{filter:brightness(1.08);}
+  button.ghost{background:none; border:1px solid var(--line); color:var(--text);}
+  button.ghost:disabled{color:var(--muted); cursor:not-allowed;}
+
+  .stage{min-width:0;}
+  .canvases{display:flex; gap:20px; flex-wrap:wrap;}
+  figure{margin:0; flex:1 1 220px; max-width:360px;}
+  figcaption{font-size:12px; color:var(--muted); margin-bottom:8px;}
+  .frame{border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#000; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; touch-action:none;}
+  .frame.draggable{cursor:grab;}
+  .frame.draggable.dragging{cursor:grabbing;}
+  .frame canvas, .frame svg{width:100%; height:100%; display:block; image-rendering:pixelated;}
+  .placeholder{color:var(--muted); font-size:12.5px; text-align:center; padding:12px;}
+
+  .tally{margin-top:22px;}
+  .tally h2{font-size:13px; color:var(--muted); font-weight:600; margin:0 0 10px;}
+  .swatch-row{display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--line); font-size:12.5px;}
+  .swatch{width:18px; height:18px; border-radius:4px; border:1px solid var(--line); flex-shrink:0;}
+  .swatch-row .count{margin-left:auto; color:var(--muted);}
+  .swatch-row .over{color:var(--accent);}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{display:flex; align-items:center; gap:6px; background:var(--panel2); border:1px solid var(--line); border-radius:20px; padding:5px 10px 5px 6px; font-size:12px; cursor:pointer;}
+  .chip .sw{width:14px; height:14px; border-radius:50%; border:1px solid var(--line);}
+  .chip.active{border-color:var(--accent); color:var(--accent);}
+  .readout{margin-top:14px; font-size:13px; padding:8px 10px; background:var(--panel2); border:1px solid var(--line); border-radius:7px;}
+
+  .canvas-wrap{overflow:auto; max-height:88vh; border:1px solid var(--line); border-radius:8px; background:#000; padding:14px; cursor:grab; touch-action:none; user-select:none;}
+  .canvas-wrap.dragging{cursor:grabbing;}
+  .svg-stack{display:inline-block;}
+  .svg-stack svg{display:block;}
+
+  .layer-list{display:flex; flex-wrap:wrap; gap:8px;}
+  .layer-chip{display:flex; align-items:center; gap:4px; background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:4px 6px; cursor:grab;}
+  .layer-chip.dragging-layer{opacity:.35;}
+  .layer-chip .lIdx{font-size:10px; color:var(--muted); width:12px; text-align:center;}
+  .layer-chip input[type=color]{width:24px; height:24px; padding:0; border:none; border-radius:5px; cursor:pointer;}
+  .layer-chip button{background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:0 2px;}
+  .layer-chip button:hover{color:#c85a4a;}
+
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
+  .modal.open{display:flex;}
+  .modal-box{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:22px; width:100%; max-width:340px;}
+  .modal-box h2{margin:0 0 6px; font-size:16px;}
+  .modal-actions{display:flex; gap:10px; margin-top:16px;}
+  .modal-actions button{margin-top:0;}
+
+  .gallery-grid{max-width:1600px; margin:0 auto; padding:24px; display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:20px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; position:relative;}
+  .card-preview{width:100%; aspect-ratio:1/1; object-fit:contain; background:#000; display:block;}
+  .card-title{padding:10px 12px 4px; font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .card-actions{display:flex; border-top:1px solid var(--line); margin-top:8px;}
+  .card-actions button{flex:1; background:none; border:none; text-align:center; padding:10px; font-size:12.5px; color:var(--text); cursor:pointer; font-weight:600;}
+  .card-actions button:first-child{border-right:1px solid var(--line);}
+  .card-actions button:hover{background:var(--panel2); color:var(--accent);}
+  .card-delete{position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%; border:none; background:rgba(0,0,0,.55); color:#fff; cursor:pointer; font-size:14px; line-height:1;}
+  .card-delete:hover{background:#c85a4a;}
+  .gallery-empty{color:var(--muted); font-size:13.5px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Palette Squares</h1>
+  <p>Crop a photo into a square, press it into a fixed color palette with per-shade pixel budgets, then inspect the result one shade at a time. Everything — original photo, settings, and preview — is saved right in this browser's local storage.</p>
+  <div class="tabs">
+    <button class="tab-btn active" data-view="editor" type="button">Editor</button>
+    <button class="tab-btn" data-view="build" type="button">Build</button>
+    <button class="tab-btn" data-view="gallery" type="button">Gallery</button>
+  </div>
+</header>
+
+<div class="view active" id="view-editor">
+  <aside class="panel">
+    <div class="drop" id="drop">
+      <strong>Drop an image here</strong>
+      or click to choose a file
+      <input type="file" id="fileInput" accept="image/*" style="display:none;">
+    </div>
+
+    <div class="field">
+      <label>Output size (px, square) <span class="mono" id="sizeVal">64</span></label>
+      <input type="number" id="size" value="64" min="4" max="400">
+    </div>
+    <div class="field">
+      <label>Zoom <span class="mono" id="zoomVal">1.00×</span></label>
+      <input type="range" id="zoom" min="1" max="6" step="0.05" value="1">
+    </div>
+    <p class="hint">Drag the source preview to reposition it. Scroll over it to zoom.</p>
+    <button class="ghost" id="resetPosBtn" type="button">Reset position</button>
+
+    <label class="check"><input type="checkbox" id="grayscaleToggle" checked> Grayscale</label>
+
+    <div class="field">
+      <label>Brightness <span class="mono" id="brightVal">0</span></label>
+      <input type="range" id="brightness" min="-100" max="100" value="0">
+    </div>
+    <div class="field">
+      <label>Contrast <span class="mono" id="contrastVal">0</span></label>
+      <input type="range" id="contrast" min="-100" max="100" value="0">
+    </div>
+
+    <label class="check"><input type="checkbox" id="circularToggle"> Circular pixels</label>
+    <div class="field" id="plateColorField" style="display:none;">
+      <label>Plate color (fills gaps between circles)</label>
+      <div class="row">
+        <input type="color" id="plateColorSwatch" value="#141311">
+        <input type="text" id="plateColorIn" class="mono" value="#141311" maxlength="7" style="flex:1; width:auto;">
+      </div>
+    </div>
+
+    <label class="check"><input type="checkbox" id="borderToggle"> Border</label>
+    <div class="field" id="borderLayersField" style="display:none;">
+      <label>Layers, outside → innermost (drag to reorder)</label>
+      <div class="layer-list" id="layerList"></div>
+      <button class="ghost" id="addLayerBtn" type="button" style="margin-top:8px;">+ add layer</button>
+    </div>
+    <p class="hint" id="contentHint">Content area: 64×64px</p>
+    <p class="hint">Each layer is one pixel-wide ring, solid color, and always square — even when circular pixels are on. Identical adjacent colors just read as one thicker ring.</p>
+
+    <div class="palette">
+      <div class="palette-head">
+        <label>Color scale &amp; max pixels</label>
+        <button type="button" id="addColor">+ shade</button>
+      </div>
+      <div id="paletteList"></div>
+      <p class="hint" id="capacityHint"></p>
+    </div>
+
+    <label class="check"><input type="checkbox" id="liveQuantize"> Live quantize (auto re-run on any change)</label>
+
+    <button class="primary" id="runBtn">Quantize</button>
+    <button class="ghost" id="downloadBtn" disabled>Download SVG</button>
+    <button class="ghost" id="sendBuildBtn" disabled>Send to Build →</button>
+    <button class="ghost" id="saveBtn" disabled>Save to Gallery</button>
+  </aside>
+
+  <main class="stage">
+    <div class="canvases">
+      <figure>
+        <figcaption>Source (drag to reposition, scroll to zoom)</figcaption>
+        <div class="frame draggable" id="srcFrame"><div class="placeholder">No image yet</div></div>
+      </figure>
+      <figure>
+        <figcaption>Result (SVG)</figcaption>
+        <div class="frame" id="outFrame"><div class="placeholder">Press Quantize</div></div>
+      </figure>
+    </div>
+    <div class="tally" id="tallyWrap" style="display:none;">
+      <h2>Pixels used per shade</h2>
+      <div id="tally"></div>
+    </div>
+  </main>
+</div>
+
+<div class="view" id="view-build">
+  <aside class="panel">
+    <button class="ghost" id="backToEditorBtn" type="button">← Back to Editor</button>
+    <label style="font-size:12.5px; color:var(--muted); display:block; margin:16px 0 8px;">Show shade</label>
+    <div class="chips" id="analyzeSwatches"></div>
+
+    <label class="check"><input type="checkbox" id="gridToggle" checked> Show grid &amp; edge numbers</label>
+
+    <div class="field">
+      <label>Cell size (scroll over the grid to zoom) <span class="mono" id="cellSizeVal">16px</span></label>
+      <input type="range" id="cellSize" min="4" max="80" value="16">
+    </div>
+
+    <div class="readout mono" id="hoverReadout">x: –, y: –</div>
+  </aside>
+
+  <main class="stage">
+    <div class="canvas-wrap" id="canvasWrap">
+      <div class="placeholder" id="buildPlaceholder">Nothing to build yet. Quantize an image in Editor and click "Send to Build", or open a saved piece from Gallery.</div>
+      <div class="svg-stack" id="analyzeSvgWrap" style="display:none;"></div>
+    </div>
+  </main>
+</div>
+
+<div class="view" id="view-gallery" style="display:block; padding:0;">
+  <div class="gallery-grid" id="galleryGrid"></div>
+</div>
+
+<div class="modal" id="saveModal">
+  <div class="modal-box">
+    <h2>Save to gallery</h2>
+    <p class="hint">Stored entirely in this browser's local storage — clearing site data removes it.</p>
+    <div class="field"><label>Name</label><input type="text" id="saveName" placeholder="My piece"></div>
+    <p class="hint warn" id="saveError" style="display:none;"></p>
+    <div class="modal-actions">
+      <button class="ghost" id="saveCancel" type="button">Cancel</button>
+      <button class="primary" id="saveConfirm" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+
+  const views = {editor: $('view-editor'), build: $('view-build'), gallery: $('view-gallery')};
+  function switchTab(name){
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+    Object.entries(views).forEach(([k,el])=> el.classList.toggle('active', k===name));
+    if(name === 'gallery') renderGallery();
+  }
+  document.querySelectorAll('.tab-btn').forEach(btn=> btn.addEventListener('click', ()=> switchTab(btn.dataset.view)));
+  $('backToEditorBtn').addEventListener('click', ()=> switchTab('editor'));
+
+  function MinHeap(){ this.a = []; }
+  MinHeap.prototype.push = function(x){
+    const a=this.a; a.push(x); let i=a.length-1;
+    while(i>0){ const p=(i-1)>>1; if(a[p][0]<=a[i][0]) break; [a[p],a[i]]=[a[i],a[p]]; i=p; }
+  };
+  MinHeap.prototype.pop = function(){
+    const a=this.a; const top=a[0]; const last=a.pop();
+    if(a.length){ a[0]=last; let i=0;
+      while(true){ let l=2*i+1,r=2*i+2,s=i;
+        if(l<a.length && a[l][0]<a[s][0]) s=l;
+        if(r<a.length && a[r][0]<a[s][0]) s=r;
+        if(s===i) break; [a[s],a[i]]=[a[i],a[s]]; i=s; }
+    }
+    return top;
+  };
+
+  function quantize(pixelsRGB, palette){
+    const n = pixelsRGB.length/3, k = palette.length;
+    const remaining = palette.map(p=>p.max);
+    const assigned = new Int32Array(n).fill(-1);
+    const orderCache = new Array(n);
+    function order(i){
+      let o = orderCache[i];
+      if(!o){
+        const r=pixelsRGB[i*3], g=pixelsRGB[i*3+1], b=pixelsRGB[i*3+2];
+        o = palette.map((p,idx)=>{
+          const dr=r-p.r, dg=g-p.g, db=b-p.b;
+          return [dr*dr+dg*dg+db*db, idx];
+        }).sort((a,b)=>a[0]-b[0]);
+        orderCache[i] = o;
+      }
+      return o;
+    }
+    const heap = new MinHeap();
+    for(let i=0;i<n;i++) heap.push([order(i)[0][0], i, 0]);
+    let done = 0;
+    while(heap.a.length && done < n){
+      const [dist, i, rank] = heap.pop();
+      if(assigned[i] !== -1) continue;
+      const o = order(i);
+      const colorIdx = o[rank][1];
+      if(remaining[colorIdx] > 0){
+        assigned[i] = colorIdx; remaining[colorIdx]--; done++;
+      } else if(rank+1 < k){
+        heap.push([o[rank+1][0], i, rank+1]);
+      } else {
+        assigned[i] = o[k-1][1]; done++;
+      }
+    }
+    return assigned;
+  }
+
+  function buildSvgMarkup(result, cellSize){
+    const unit = cellSize || 1;
+    const {fullN, pixels, circular, plateColor} = result;
+    const dim = fullN*unit;
+    let s = '<svg xmlns="http://www.w3.org/2000/svg" width="'+dim+'" height="'+dim+'" viewBox="0 0 '+dim+' '+dim+'" shape-rendering="crispEdges">';
+    if(circular){
+      s += '<rect x="0" y="0" width="'+dim+'" height="'+dim+'" fill="'+(plateColor||'#141311')+'"/>';
+    }
+    for(let i=0;i<fullN*fullN;i++){
+      const r = (i/fullN)|0, c = i%fullN;
+      const px = pixels[i];
+      const x = c*unit, y = r*unit;
+      if(circular && !px.isBorder){
+        s += '<circle cx="'+(x+unit/2)+'" cy="'+(y+unit/2)+'" r="'+(unit*0.47)+'" fill="'+px.hex+'"/>';
+      } else {
+        s += '<rect x="'+x+'" y="'+y+'" width="'+unit+'" height="'+unit+'" fill="'+px.hex+'"/>';
+      }
+    }
+    s += '</svg>';
+    return s;
+  }
+
+  function niceStep(cellSize){
+    const raw = Math.ceil(22/cellSize);
+    const steps = [1,2,5,10,20,25,50,100,200];
+    for(const s of steps) if(s>=raw) return s;
+    return 200;
+  }
+
+  function buildAnalysisSVG(result, o){
+    const {fullN, pixels, circular, plateColor} = result;
+    const cell = o.cellSize, margin = o.gridOn ? 24 : 0;
+    const inner = fullN*cell, dim = inner + margin;
+    let s = '<svg id="analyzeSvg" xmlns="http://www.w3.org/2000/svg" width="'+dim+'" height="'+dim+'" viewBox="0 0 '+dim+' '+dim+'" shape-rendering="geometricPrecision">';
+    s += '<rect x="0" y="0" width="'+dim+'" height="'+dim+'" fill="#000"/>';
+    if(circular){
+      s += '<rect x="'+margin+'" y="'+margin+'" width="'+inner+'" height="'+inner+'" fill="'+(plateColor||'#141311')+'"/>';
+    }
+    for(let i=0;i<fullN*fullN;i++){
+      const r = (i/fullN)|0, c = i%fullN;
+      const px = pixels[i];
+      const opacity = (o.select && !px.isBorder && px.hex.toLowerCase() !== o.select.toLowerCase()) ? 0.3 : 1;
+      const x = margin + c*cell, y = margin + r*cell;
+      if(circular && !px.isBorder){
+        s += '<circle cx="'+(x+cell/2)+'" cy="'+(y+cell/2)+'" r="'+(cell*0.47)+'" fill="'+px.hex+'" opacity="'+opacity+'"/>';
+      } else {
+        s += '<rect x="'+x+'" y="'+y+'" width="'+cell+'" height="'+cell+'" fill="'+px.hex+'" opacity="'+opacity+'" shape-rendering="crispEdges"/>';
+      }
+    }
+    if(o.gridOn){
+      s += '<g stroke="rgba(255,255,255,.14)" stroke-width="1">';
+      for(let i=0;i<=fullN;i++){
+        s += '<line x1="'+(margin+i*cell)+'" y1="'+margin+'" x2="'+(margin+i*cell)+'" y2="'+(margin+inner)+'"/>';
+        s += '<line x1="'+margin+'" y1="'+(margin+i*cell)+'" x2="'+(margin+inner)+'" y2="'+(margin+i*cell)+'"/>';
+      }
+      s += '</g>';
+      const step = niceStep(cell);
+      s += '<g fill="#ece7de" font-family="ui-monospace,monospace" font-size="10">';
+      for(let c=0;c<fullN;c+=step) s += '<text x="'+(margin+c*cell+cell/2)+'" y="'+(margin-8)+'" text-anchor="middle">'+c+'</text>';
+      for(let r=0;r<fullN;r+=step) s += '<text x="'+(margin-6)+'" y="'+(margin+r*cell+cell/2+3)+'" text-anchor="end">'+r+'</text>';
+      s += '</g>';
+    }
+    s += '<rect id="hoverRect" x="0" y="0" width="'+cell+'" height="'+cell+'" fill="none" stroke="#e8952f" stroke-width="2" style="display:none; pointer-events:none;"/>';
+    s += '</svg>';
+    return s;
+  }
+
+  function reconstructResult(grid, palette, borderLayers, circular, plateColor){
+    const fullN = grid.fullN, cells = grid.cells;
+    const pixels = new Array(fullN*fullN);
+    for(let i=0;i<cells.length;i++){
+      const v = cells[i];
+      if(v >= 0){ pixels[i] = {hex:palette[v].hex, isBorder:false}; }
+      else { const ring = -v-1; pixels[i] = {hex:(borderLayers && borderLayers[ring]) || '#ffffff', isBorder:true}; }
+    }
+    return {fullN, contentN:grid.contentN, pixels, circular:!!circular, plateColor: plateColor || '#141311'};
+  }
+
+  function svgToDataUri(svgStr){
+    return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
+  }
+  function escapeHtml(str){
+    const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+  }
+
+  const drop = $('drop'), fileInput = $('fileInput');
+  const sizeIn = $('size'), sizeVal = $('sizeVal');
+  const zoomIn = $('zoom'), zoomVal = $('zoomVal'), resetPosBtn = $('resetPosBtn');
+  const grayscaleToggle = $('grayscaleToggle');
+  const brightIn = $('brightness'), brightVal = $('brightVal');
+  const contrastIn = $('contrast'), contrastVal = $('contrastVal');
+  const circularToggle = $('circularToggle'), plateColorField = $('plateColorField');
+  const plateColorSwatch = $('plateColorSwatch'), plateColorIn = $('plateColorIn');
+  const borderToggle = $('borderToggle'), borderLayersField = $('borderLayersField');
+  const layerList = $('layerList'), addLayerBtn = $('addLayerBtn'), contentHint = $('contentHint');
+  const paletteList = $('paletteList'), capacityHint = $('capacityHint');
+  const srcFrame = $('srcFrame'), outFrame = $('outFrame');
+  const runBtn = $('runBtn'), downloadBtn = $('downloadBtn'), sendBuildBtn = $('sendBuildBtn'), saveBtn = $('saveBtn');
+  const tallyWrap = $('tallyWrap'), tally = $('tally');
+  const liveQuantize = $('liveQuantize');
+  const saveModal = $('saveModal'), saveName = $('saveName'), saveError = $('saveError');
+  const saveCancel = $('saveCancel'), saveConfirm = $('saveConfirm');
+
+  let img = null, srcCanvas = null;
+  let zoom = 1, panX = 0, panY = 0, dragging = false, lastX = 0, lastY = 0;
+  let lastPalette = null, lastResult = null;
+  let layers = [];
+
+  function renderLayerList(){
+    layerList.innerHTML = '';
+    layers.forEach((l, idx)=>{
+      const el = document.createElement('div');
+      el.className = 'layer-chip';
+      el.draggable = true;
+      el.innerHTML = '<span class="lIdx">'+(idx+1)+'</span><input type="color" class="lColor" value="'+l.hex+'"><button type="button" class="lRemove">×</button>';
+      el.querySelector('.lColor').addEventListener('input', e=>{ layers[idx].hex = e.target.value; refreshBorderStyle(); });
+      el.querySelector('.lRemove').addEventListener('click', ()=>{ layers.splice(idx,1); renderLayerList(); renderSource(); });
+      el.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', String(idx)); el.classList.add('dragging-layer'); });
+      el.addEventListener('dragend', ()=> el.classList.remove('dragging-layer'));
+      el.addEventListener('dragover', e=> e.preventDefault());
+      el.addEventListener('drop', e=>{
+        e.preventDefault();
+        const from = parseInt(e.dataTransfer.getData('text/plain'),10);
+        if(isNaN(from) || from===idx) return;
+        const [moved] = layers.splice(from,1);
+        layers.splice(idx,0,moved);
+        renderLayerList(); renderSource();
+      });
+      layerList.appendChild(el);
+    });
+  }
+  addLayerBtn.addEventListener('click', ()=>{ layers.push({hex:'#ffffff'}); renderLayerList(); renderSource(); });
+  borderToggle.addEventListener('change', ()=>{
+    borderLayersField.style.display = borderToggle.checked ? 'block' : 'none';
+    renderSource();
+  });
+
+  function refreshBorderStyle(){
+    if(!lastResult) return;
+    const {cells, pixels} = lastResult;
+    for(let i=0;i<cells.length;i++){
+      const v = cells[i];
+      if(v < 0){
+        const ring = -v-1;
+        pixels[i].hex = (layers[ring] && layers[ring].hex) || '#ffffff';
+      }
+    }
+    outFrame.innerHTML = buildSvgMarkup(lastResult);
+  }
+  function refreshRenderStyle(){
+    if(!lastResult) return;
+    lastResult.circular = circularToggle.checked;
+    lastResult.plateColor = plateColorIn.value;
+    outFrame.innerHTML = buildSvgMarkup(lastResult);
+  }
+  circularToggle.addEventListener('change', ()=>{
+    plateColorField.style.display = circularToggle.checked ? 'block' : 'none';
+    refreshRenderStyle();
+  });
+  plateColorSwatch.addEventListener('input', ()=>{ plateColorIn.value = plateColorSwatch.value; refreshRenderStyle(); });
+  plateColorIn.addEventListener('change', ()=>{
+    let v = plateColorIn.value.trim();
+    if(!/^#[0-9a-fA-F]{6}$/.test(v)) v = plateColorSwatch.value;
+    plateColorIn.value = v; plateColorSwatch.value = v; refreshRenderStyle();
+  });
+  plateColorIn.addEventListener('input', ()=>{
+    if(/^#[0-9a-fA-F]{6}$/.test(plateColorIn.value.trim())){ plateColorSwatch.value = plateColorIn.value.trim(); refreshRenderStyle(); }
+  });
+
+  let autoTimer = null;
+  function scheduleAutoQuantize(){
+    if(!liveQuantize.checked || !srcCanvas) return;
+    clearTimeout(autoTimer);
+    autoTimer = setTimeout(performQuantize, 150);
+  }
+  liveQuantize.addEventListener('change', ()=>{ if(liveQuantize.checked) scheduleAutoQuantize(); });
+
+  function addRow(hex, max){
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML =
+      '<input type="color" class="pColor" value="'+hex+'">' +
+      '<input type="text" class="pHex mono" value="'+hex+'" maxlength="7">' +
+      '<input type="number" class="pMax" placeholder="no limit" min="0" value="'+(max==null?'':max)+'">' +
+      '<button type="button" class="pRemove" title="remove">×</button>';
+    paletteList.appendChild(row);
+    const colorIn = row.querySelector('.pColor'), hexIn = row.querySelector('.pHex');
+    colorIn.addEventListener('input', ()=>{ hexIn.value = colorIn.value; updateHint(); });
+    hexIn.addEventListener('change', ()=>{
+      let v = hexIn.value.trim();
+      if(!/^#[0-9a-fA-F]{6}$/.test(v)) v = colorIn.value;
+      hexIn.value = v; colorIn.value = v; updateHint();
+    });
+    row.querySelector('.pMax').addEventListener('input', updateHint);
+    row.querySelector('.pRemove').addEventListener('click', ()=>{
+      if(paletteList.children.length > 1){ row.remove(); updateHint(); }
+    });
+  }
+  $('addColor').addEventListener('click', ()=>{ addRow('#808080',''); updateHint(); });
+
+  function readPalette(){
+    return [...paletteList.children].map(row=>{
+      const hex = row.querySelector('.pHex').value;
+      const maxRaw = row.querySelector('.pMax').value.trim();
+      const max = maxRaw === '' ? Infinity : Math.max(0, parseInt(maxRaw,10) || 0);
+      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      return {hex, max, r, g, b};
+    });
+  }
+
+  function computeContentN(){
+    const N = Math.max(4, Math.min(400, parseInt(sizeIn.value,10) || 64));
+    const maxBorder = Math.floor((N-1)/2);
+    const rawCount = borderToggle.checked ? layers.length : 0;
+    const borderCount = Math.min(rawCount, maxBorder);
+    return {N, borderCount, contentN: N - 2*borderCount};
+  }
+
+  function updateHint(){
+    const {contentN} = computeContentN();
+    const total = contentN*contentN;
+    const palette = readPalette();
+    const capped = palette.filter(p=>p.max !== Infinity);
+    const sum = capped.reduce((s,p)=>s+p.max, 0);
+    const anyUnlimited = capped.length < palette.length;
+    if(!anyUnlimited && sum < total){
+      capacityHint.textContent = 'Total capacity ('+sum+') is less than the '+total+' content pixels needed — extra pixels fall back to their nearest shade regardless of its cap.';
+      capacityHint.className = 'hint warn';
+    } else {
+      capacityHint.textContent = total+' content pixels available across the palette.';
+      capacityHint.className = 'hint';
+    }
+    scheduleAutoQuantize();
+  }
+
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e=>{ const f = e.dataTransfer.files[0]; if(f) loadFile(f); });
+  drop.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', e=>{ if(e.target.files[0]) loadFile(e.target.files[0]); });
+
+  function loadFile(file){
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const image = new Image();
+      image.onload = ()=>{
+        img = image; zoom = 1; panX = 0; panY = 0;
+        zoomIn.value = 1; zoomVal.textContent = '1.00×';
+        renderSource();
+      };
+      image.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function cropSide(){ return Math.min(img.width, img.height) / zoom; }
+  function clampPan(){
+    const side = cropSide();
+    const maxX = Math.max(0, (img.width - side) / 2);
+    const maxY = Math.max(0, (img.height - side) / 2);
+    panX = Math.max(-maxX, Math.min(maxX, panX));
+    panY = Math.max(-maxY, Math.min(maxY, panY));
+  }
+
+  srcFrame.addEventListener('pointerdown', e=>{
+    if(!img) return;
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    srcFrame.setPointerCapture(e.pointerId); srcFrame.classList.add('dragging');
+  });
+  srcFrame.addEventListener('pointermove', e=>{
+    if(!dragging || !img) return;
+    const rect = srcFrame.getBoundingClientRect();
+    const scale = cropSide() / rect.width;
+    panX -= (e.clientX - lastX) * scale;
+    panY -= (e.clientY - lastY) * scale;
+    lastX = e.clientX; lastY = e.clientY;
+    clampPan(); renderSource();
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev=>srcFrame.addEventListener(ev, ()=>{
+    dragging = false; srcFrame.classList.remove('dragging');
+  }));
+  srcFrame.addEventListener('wheel', e=>{
+    if(!img) return;
+    e.preventDefault();
+    zoom = Math.max(1, Math.min(6, zoom + (e.deltaY > 0 ? -0.15 : 0.15)));
+    zoomIn.value = zoom.toFixed(2); zoomVal.textContent = zoom.toFixed(2)+'×';
+    clampPan(); renderSource();
+  }, {passive:false});
+  zoomIn.addEventListener('input', ()=>{
+    if(!img) return;
+    zoom = parseFloat(zoomIn.value); zoomVal.textContent = zoom.toFixed(2)+'×';
+    clampPan(); renderSource();
+  });
+  resetPosBtn.addEventListener('click', ()=>{
+    zoom = 1; panX = 0; panY = 0; zoomIn.value = 1; zoomVal.textContent = '1.00×';
+    renderSource();
+  });
+
+  function adjust(value, brightness, contrast){
+    const c = contrast*2.55;
+    const factor = (259*(c+255)) / (255*(259-c));
+    let v = factor*(value-128) + 128 + brightness*2.55;
+    return Math.min(255, Math.max(0, v));
+  }
+
+  function renderSource(){
+    if(!img) return;
+    const {N, borderCount, contentN} = computeContentN();
+    sizeIn.value = N; sizeVal.textContent = N;
+    contentHint.textContent = 'Content area: '+contentN+'×'+contentN+'px (border eats into the '+N+'px square)';
+
+    if(!srcCanvas){ srcCanvas = document.createElement('canvas'); srcFrame.innerHTML=''; srcFrame.appendChild(srcCanvas); }
+    srcCanvas.width = contentN; srcCanvas.height = contentN;
+    const ctx = srcCanvas.getContext('2d');
+    const side = cropSide();
+    const cx = img.width/2 + panX, cy = img.height/2 + panY;
+    let sx = cx - side/2, sy = cy - side/2;
+    sx = Math.max(0, Math.min(img.width - side, sx));
+    sy = Math.max(0, Math.min(img.height - side, sy));
+    ctx.drawImage(img, sx, sy, side, side, 0, 0, contentN, contentN);
+
+    const data = ctx.getImageData(0,0,contentN,contentN);
+    const brightness = parseInt(brightIn.value,10), contrast = parseInt(contrastIn.value,10);
+    const grayOn = grayscaleToggle.checked;
+    const d = data.data;
+    for(let i=0;i<d.length;i+=4){
+      let r=d[i], g=d[i+1], b=d[i+2];
+      if(grayOn){ const gray = 0.299*r + 0.587*g + 0.114*b; r=g=b=gray; }
+      d[i]=adjust(r,brightness,contrast); d[i+1]=adjust(g,brightness,contrast); d[i+2]=adjust(b,brightness,contrast);
+    }
+    ctx.putImageData(data,0,0);
+    downloadBtn.disabled = true; sendBuildBtn.disabled = true; saveBtn.disabled = true;
+    outFrame.innerHTML = '<div class="placeholder">Press Quantize</div>';
+    lastResult = null;
+    tallyWrap.style.display = 'none';
+    scheduleAutoQuantize();
+  }
+
+  [sizeIn, brightIn, contrastIn].forEach(el=>{
+    el.addEventListener('input', ()=>{
+      brightVal.textContent = brightIn.value; contrastVal.textContent = contrastIn.value;
+      renderSource(); updateHint();
+    });
+  });
+  grayscaleToggle.addEventListener('change', renderSource);
+
+  function performQuantize(){
+    const contentN = srcCanvas.width;
+    const N = parseInt(sizeIn.value,10);
+    const {borderCount} = computeContentN();
+    const activeLayers = borderToggle.checked ? layers.slice(0, borderCount).map(l=>l.hex) : [];
+
+    const ctx = srcCanvas.getContext('2d');
+    const imgData = ctx.getImageData(0,0,contentN,contentN).data;
+    const pixelsRGB = new Uint8ClampedArray(contentN*contentN*3);
+    for(let i=0,p=0;i<imgData.length;i+=4,p++){ pixelsRGB[p*3]=imgData[i]; pixelsRGB[p*3+1]=imgData[i+1]; pixelsRGB[p*3+2]=imgData[i+2]; }
+
+    const palette = readPalette();
+    lastPalette = palette;
+    const assigned = quantize(pixelsRGB, palette);
+    const counts = new Array(palette.length).fill(0);
+    for(let p=0;p<contentN*contentN;p++) counts[assigned[p]]++;
+
+    const fullN = N;
+    const pixels = new Array(fullN*fullN);
+    const cells = new Array(fullN*fullN);
+    for(let r=0;r<fullN;r++){
+      for(let c=0;c<fullN;c++){
+        const idx = r*fullN+c;
+        const ring = Math.min(r, c, fullN-1-r, fullN-1-c);
+        if(ring < activeLayers.length){
+          pixels[idx] = {hex: activeLayers[ring], isBorder:true};
+          cells[idx] = -(ring+1);
+        } else {
+          const rr = r - activeLayers.length, cc = c - activeLayers.length;
+          const p = rr*contentN + cc;
+          const ci = assigned[p];
+          pixels[idx] = {hex: palette[ci].hex, isBorder:false};
+          cells[idx] = ci;
+        }
+      }
+    }
+    lastResult = {
+      fullN, contentN, pixels, cells,
+      circular: circularToggle.checked, plateColor: plateColorIn.value
+    };
+
+    outFrame.innerHTML = buildSvgMarkup(lastResult);
+
+    tally.innerHTML = palette.map((c,idx)=>{
+      const over = c.max !== Infinity && counts[idx] > c.max;
+      const maxLabel = c.max === Infinity ? 'no limit' : c.max;
+      return '<div class="swatch-row"><span class="swatch" style="background:'+c.hex+'"></span>'+
+        '<span class="mono">'+c.hex+'</span>'+
+        '<span class="count'+(over?' over':'')+'">'+counts[idx]+' / '+maxLabel+'</span></div>';
+    }).join('');
+    tallyWrap.style.display = 'block';
+    downloadBtn.disabled = false; sendBuildBtn.disabled = false; saveBtn.disabled = false;
+  }
+
+  runBtn.addEventListener('click', ()=>{
+    if(!srcCanvas){ alert('Drop an image first.'); return; }
+    performQuantize();
+  });
+
+  downloadBtn.addEventListener('click', ()=>{
+    if(!lastResult) return;
+    const svgStr = buildSvgMarkup(lastResult, 8);
+    const blob = new Blob([svgStr], {type:'image/svg+xml'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'palette-square.svg'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  sendBuildBtn.addEventListener('click', ()=>{
+    if(!lastResult) return;
+    analysis.result = {
+      fullN:lastResult.fullN, contentN:lastResult.contentN, pixels:lastResult.pixels,
+      circular:lastResult.circular, plateColor:lastResult.plateColor
+    };
+    analysis.palette = lastPalette.map(p=>({hex:p.hex}));
+    analysis.selected = null;
+    buildPlaceholder.style.display = 'none';
+    analyzeSvgWrap.style.display = 'inline-block';
+    buildSwatches();
+    drawAnalyze();
+    switchTab('build');
+  });
+
+  function imageToDataURL(image){
+    const c = document.createElement('canvas');
+    c.width = image.naturalWidth || image.width;
+    c.height = image.naturalHeight || image.height;
+    c.getContext('2d').drawImage(image, 0, 0);
+    return c.toDataURL('image/png');
+  }
+  function openModal(){ saveError.style.display='none'; saveName.value=''; saveModal.classList.add('open'); }
+  function closeModal(){ saveModal.classList.remove('open'); }
+  function showError(msg){ saveError.textContent = msg; saveError.style.display='block'; }
+
+  saveBtn.addEventListener('click', ()=>{ if(lastResult) openModal(); });
+  saveCancel.addEventListener('click', closeModal);
+  saveModal.addEventListener('click', e=>{ if(e.target === saveModal) closeModal(); });
+
+  saveConfirm.addEventListener('click', ()=>{
+    if(!lastResult) return;
+    const name = saveName.value.trim();
+    if(!name){ showError('Enter a name.'); return; }
+
+    const selected = (analysis.selected && lastPalette.some(p=>p.hex.toLowerCase()===analysis.selected.toLowerCase()))
+      ? analysis.selected : null;
+
+    const id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+    const item = {
+      id, name, created: new Date().toISOString(),
+      originalDataUrl: imageToDataURL(img),
+      crop: {size: parseInt(sizeIn.value,10), zoom, panX, panY},
+      adjust: {brightness: parseInt(brightIn.value,10), contrast: parseInt(contrastIn.value,10)},
+      grayscale: grayscaleToggle.checked,
+      circular: lastResult.circular,
+      plateColor: lastResult.plateColor,
+      borderOn: borderToggle.checked,
+      borderLayers: layers.map(l=>l.hex),
+      palette: lastPalette.map(p=>({hex:p.hex, max: p.max===Infinity ? null : p.max})),
+      grid: {fullN:lastResult.fullN, contentN:lastResult.contentN, cells:Array.from(lastResult.cells)},
+      build: {gridOn:gridToggle.checked, cellSize:parseInt(cellSizeIn.value,10), selected},
+      previewSvg: buildAnalysisSVG(lastResult, {cellSize:6, gridOn:false, select:selected})
+    };
+    try{
+      localStorage.setItem('paletteApp.gallery.'+id, JSON.stringify(item));
+    } catch(e){
+      showError("Could not save — this browser's local storage is full. Try a smaller image, fewer saves, or a smaller output size.");
+      return;
+    }
+    closeModal();
+    switchTab('gallery');
+  });
+
+  function loadItemIntoEditor(id){
+    const raw = localStorage.getItem('paletteApp.gallery.'+id);
+    if(!raw) return;
+    const it = JSON.parse(raw);
+    paletteList.innerHTML = '';
+    (it.palette || []).forEach(p => addRow(p.hex, p.max == null ? '' : p.max));
+    sizeIn.value = it.crop.size; sizeVal.textContent = it.crop.size;
+    grayscaleToggle.checked = it.grayscale !== false;
+    circularToggle.checked = !!it.circular;
+    plateColorIn.value = it.plateColor || '#141311'; plateColorSwatch.value = plateColorIn.value;
+    plateColorField.style.display = circularToggle.checked ? 'block' : 'none';
+    borderToggle.checked = !!it.borderOn;
+    layers = (it.borderLayers || []).map(hex=>({hex}));
+    renderLayerList();
+    borderLayersField.style.display = borderToggle.checked ? 'block' : 'none';
+    brightIn.value = it.adjust.brightness || 0; brightVal.textContent = it.adjust.brightness || 0;
+    contrastIn.value = it.adjust.contrast || 0; contrastVal.textContent = it.adjust.contrast || 0;
+    zoom = it.crop.zoom || 1; panX = it.crop.panX || 0; panY = it.crop.panY || 0;
+    zoomIn.value = zoom; zoomVal.textContent = zoom.toFixed(2)+'×';
+
+    const image = new Image();
+    image.onload = ()=>{ img = image; renderSource(); switchTab('editor'); };
+    image.src = it.originalDataUrl;
+    updateHint();
+  }
+
+  addRow('#101010',980); addRow('#252529',980); addRow('#282424',980); addRow('#505762',980); addRow('#a0a0a0',980); addRow('#f5f5f0',980);
+  updateHint();
+
+  const analyzeSwatches = $('analyzeSwatches'), gridToggle = $('gridToggle');
+  const cellSizeIn = $('cellSize'), cellSizeVal = $('cellSizeVal'), hoverReadout = $('hoverReadout');
+  const buildPlaceholder = $('buildPlaceholder'), analyzeSvgWrap = $('analyzeSvgWrap'), canvasWrap = $('canvasWrap');
+
+  const analysis = { result:null, palette:[], selected:null };
+
+  function buildSwatches(){
+    const chips = [{hex:null, label:'All'}].concat(analysis.palette.map(p=>({hex:p.hex, label:p.hex})));
+    analyzeSwatches.innerHTML = '';
+    chips.forEach(c=>{
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'chip' + (analysis.selected === c.hex ? ' active' : '');
+      el.innerHTML = (c.hex ? '<span class="sw" style="background:'+c.hex+'"></span>' : '') + c.label;
+      el.addEventListener('click', ()=>{
+        analysis.selected = c.hex;
+        [...analyzeSwatches.children].forEach(ch=>ch.classList.remove('active'));
+        el.classList.add('active');
+        drawAnalyze();
+      });
+      analyzeSwatches.appendChild(el);
+    });
+  }
+
+  function attachHover(){
+    const svgEl = analyzeSvgWrap.querySelector('#analyzeSvg');
+    const hoverRect = analyzeSvgWrap.querySelector('#hoverRect');
+    if(!svgEl || !analysis.result) return;
+    const n = analysis.result.fullN;
+    svgEl.addEventListener('mousemove', e=>{
+      const cell = parseInt(cellSizeIn.value,10), margin = gridToggle.checked ? 24 : 0;
+      const rect = svgEl.getBoundingClientRect();
+      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      const col = Math.floor((mx-margin)/cell), row = Math.floor((my-margin)/cell);
+      if(col>=0 && col<n && row>=0 && row<n){
+        hoverReadout.textContent = 'x: '+col+', y: '+row;
+        hoverRect.setAttribute('x', margin+col*cell+1);
+        hoverRect.setAttribute('y', margin+row*cell+1);
+        hoverRect.setAttribute('width', cell-2);
+        hoverRect.setAttribute('height', cell-2);
+        hoverRect.style.display = 'block';
+      } else {
+        hoverRect.style.display = 'none';
+        hoverReadout.textContent = 'x: –, y: –';
+      }
+    });
+    svgEl.addEventListener('mouseleave', ()=>{ hoverRect.style.display='none'; hoverReadout.textContent='x: –, y: –'; });
+  }
+
+  function drawAnalyze(){
+    if(!analysis.result) return;
+    const cell = parseInt(cellSizeIn.value,10);
+    const markup = buildAnalysisSVG(analysis.result, { cellSize: cell, gridOn: gridToggle.checked, select: analysis.selected });
+    analyzeSvgWrap.innerHTML = markup;
+    attachHover();
+  }
+
+  cellSizeIn.addEventListener('input', ()=>{ cellSizeVal.textContent = cellSizeIn.value+'px'; drawAnalyze(); });
+  gridToggle.addEventListener('change', drawAnalyze);
+
+  let panScrolling = false, panStartX = 0, panStartY = 0, scrollStartX = 0, scrollStartY = 0;
+  canvasWrap.addEventListener('pointerdown', e=>{
+    if(!analysis.result) return;
+    panScrolling = true;
+    panStartX = e.clientX; panStartY = e.clientY;
+    scrollStartX = canvasWrap.scrollLeft; scrollStartY = canvasWrap.scrollTop;
+    canvasWrap.setPointerCapture(e.pointerId);
+    canvasWrap.classList.add('dragging');
+  });
+  canvasWrap.addEventListener('pointermove', e=>{
+    if(!panScrolling) return;
+    canvasWrap.scrollLeft = scrollStartX - (e.clientX - panStartX);
+    canvasWrap.scrollTop = scrollStartY - (e.clientY - panStartY);
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev=>canvasWrap.addEventListener(ev, ()=>{
+    panScrolling = false; canvasWrap.classList.remove('dragging');
+  }));
+
+  canvasWrap.addEventListener('wheel', e=>{
+    if(!analysis.result) return;
+    e.preventDefault();
+    const rect = canvasWrap.getBoundingClientRect();
+    const oldCell = parseInt(cellSizeIn.value,10);
+    const contentX = e.clientX - rect.left + canvasWrap.scrollLeft;
+    const contentY = e.clientY - rect.top + canvasWrap.scrollTop;
+    const ratioX = contentX/oldCell, ratioY = contentY/oldCell;
+    const newCell = Math.max(4, Math.min(80, oldCell + (e.deltaY > 0 ? -2 : 2)));
+    if(newCell === oldCell) return;
+    cellSizeIn.value = newCell; cellSizeVal.textContent = newCell+'px';
+    drawAnalyze();
+    canvasWrap.scrollLeft = ratioX*newCell - (e.clientX - rect.left);
+    canvasWrap.scrollTop = ratioY*newCell - (e.clientY - rect.top);
+  }, {passive:false});
+
+  function loadItemIntoBuild(id){
+    const raw = localStorage.getItem('paletteApp.gallery.'+id);
+    if(!raw) return;
+    const it = JSON.parse(raw);
+    analysis.result = reconstructResult(it.grid, it.palette, it.borderLayers, it.circular, it.plateColor);
+    analysis.palette = it.palette;
+    const bs = it.build || {};
+    analysis.selected = bs.selected || null;
+    gridToggle.checked = bs.gridOn !== false;
+    cellSizeIn.value = bs.cellSize || Math.max(4, Math.min(30, Math.floor(560/analysis.result.fullN)));
+    cellSizeVal.textContent = cellSizeIn.value+'px';
+    buildPlaceholder.style.display = 'none';
+    analyzeSvgWrap.style.display = 'inline-block';
+    buildSwatches();
+    drawAnalyze();
+    switchTab('build');
+  }
+
+  const galleryGrid = $('galleryGrid');
+
+  function collectGalleryItems(){
+    return Object.keys(localStorage)
+      .filter(k=>k.startsWith('paletteApp.gallery.'))
+      .map(k=>{ try{ return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } })
+      .filter(Boolean)
+      .sort((a,b)=> (b.created||'').localeCompare(a.created||''));
+  }
+
+  function renderGallery(){
+    const items = collectGalleryItems();
+    if(!items.length){
+      galleryGrid.innerHTML = '<p class="gallery-empty">Nothing saved yet. Quantize something in Editor and save it here.</p>';
+      return;
+    }
+    galleryGrid.innerHTML = items.map(it => (
+      '<div class="card">' +
+        '<button type="button" class="card-delete" data-id="'+it.id+'" title="Delete">×</button>' +
+        '<img class="card-preview" src="'+svgToDataUri(it.previewSvg)+'" alt="'+escapeHtml(it.name)+'">' +
+        '<div class="card-title">'+escapeHtml(it.name)+'</div>' +
+        '<div class="card-actions">' +
+          '<button type="button" class="card-edit" data-id="'+it.id+'">Edit</button>' +
+          '<button type="button" class="card-build" data-id="'+it.id+'">Build</button>' +
+        '</div>' +
+      '</div>'
+    )).join('');
+    galleryGrid.querySelectorAll('.card-edit').forEach(b=> b.addEventListener('click', ()=> loadItemIntoEditor(b.dataset.id)));
+    galleryGrid.querySelectorAll('.card-build').forEach(b=> b.addEventListener('click', ()=> loadItemIntoBuild(b.dataset.id)));
+    galleryGrid.querySelectorAll('.card-delete').forEach(b=> b.addEventListener('click', ()=>{
+      if(confirm('Delete this piece?')){ localStorage.removeItem('paletteApp.gallery.'+b.dataset.id); renderGallery(); }
+    }));
+  }
+})();
+</script>
+</body>
+</html>
