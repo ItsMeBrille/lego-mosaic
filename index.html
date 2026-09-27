@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Palette Squares</title>
+<title>LEGO MOSAIC CREATOR</title>
 <style>
   :root{
     --bg:#121110; --panel:#1a1917; --panel2:#201f1c; --line:#332f29;
@@ -15,10 +15,10 @@
   body{margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
   header{padding:26px 24px 0; max-width:1600px; margin:0 auto;}
-  header h1{margin:0; font-size:22px; font-weight:600;}
-  header p{margin:6px 0 14px; color:var(--muted); font-size:14px; max-width:66ch;}
+  header h1{margin:0; font-size:24px; font-weight:600;}
+  header p{margin:6px 0 14px; color:var(--muted); font-size:14px; max-width:100ch;}
   .tabs{display:flex; gap:4px; border-bottom:1px solid var(--line);}
-  .tab-btn{background:none; border:none; color:var(--muted); font-size:13.5px; font-weight:600; padding:10px 6px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;}
+  .tab-btn{background:none; border:none; color:var(--muted); font-size:15px; font-weight:600; padding:10px 6px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;}
   .tab-btn.active{color:var(--accent); border-bottom-color:var(--accent);}
 
   .view{display:none; max-width:1600px; margin:0 auto; padding:20px 24px 60px; grid-template-columns:300px 1fr; gap:20px;}
@@ -26,14 +26,14 @@
   @media (max-width:820px){ .view{grid-template-columns:1fr;} }
 
   .panel{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; align-self:start;}
-  .drop{border:1.5px dashed var(--line); border-radius:8px; padding:22px 12px; text-align:center; color:var(--muted); font-size:13px; cursor:pointer;}
-  .drop.over{border-color:var(--accent); color:var(--text);}
-  .drop strong{color:var(--text); display:block; margin-bottom:2px; font-size:14px;}
   .field{margin-top:16px;}
   .field label{display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-bottom:6px;}
   .field input[type=number], .field input[type=text]{width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:7px 9px; font-size:13px;}
   .field input[type=color]{width:100%; height:34px; padding:2px; border:1px solid var(--line); border-radius:6px; background:none; cursor:pointer;}
   input[type=range]{width:100%; accent-color:var(--accent);}
+  .size-row{display:flex; align-items:center; gap:8px;}
+  .size-row input{flex:1; min-width:0;}
+  .size-x{color:var(--muted); font-size:13px;}
   .palette{margin-top:18px;}
   .palette-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
   .palette-head label{font-size:12.5px; color:var(--muted);}
@@ -48,22 +48,39 @@
   .hint.warn{color:var(--accent);}
   .check{display:flex; align-items:center; gap:8px; font-size:13px; margin-top:16px; cursor:pointer;}
   .check input{accent-color:var(--accent); width:16px; height:16px;}
+  .check.disabled{opacity:.45; cursor:not-allowed;}
 
   button.primary, button.ghost{width:100%; margin-top:14px; padding:10px; border-radius:7px; font-size:13.5px; font-weight:600; cursor:pointer; border:1px solid transparent; text-align:center;}
   button.primary{background:var(--accent); color:#171310;}
   button.primary:hover{filter:brightness(1.08);}
+  button.primary:disabled{opacity:.6; cursor:not-allowed;}
   button.ghost{background:none; border:1px solid var(--line); color:var(--text);}
   button.ghost:disabled{color:var(--muted); cursor:not-allowed;}
 
+  .render-row{display:flex; align-items:center; gap:10px; margin-top:14px;}
+  .render-row button{flex:1; margin-top:0;}
+  .live-check{display:flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); white-space:nowrap; cursor:pointer; margin-top:0;}
+  .live-check input{accent-color:var(--accent); width:15px; height:15px;}
+  .btn-row{display:flex; gap:10px;}
+  .btn-row button{flex:1;}
+
   .stage{min-width:0;}
-  .canvases{display:flex; gap:20px; flex-wrap:wrap;}
-  figure{margin:0; flex:1 1 220px; max-width:360px;}
+  .canvases{display:flex; gap:24px; flex-wrap:wrap;}
+  figure{margin:0; flex:1 1 220px; max-width:604px;}
   figcaption{font-size:12px; color:var(--muted); margin-bottom:8px;}
-  .frame{border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#000; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; touch-action:none;}
+  .frame{position:relative; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#000; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; touch-action:none;}
   .frame.draggable{cursor:grab;}
+  .frame.draggable.empty{cursor:pointer;}
   .frame.draggable.dragging{cursor:grabbing;}
+  .frame.drag-over{border-color:var(--accent);}
   .frame canvas, .frame svg{width:100%; height:100%; display:block; image-rendering:pixelated;}
   .placeholder{color:var(--muted); font-size:12.5px; text-align:center; padding:12px;}
+  .frame-icon-btn{
+    position:absolute; top:8px; right:8px; width:30px; height:30px; border-radius:50%;
+    background:rgba(20,19,17,.75); border:1px solid var(--line); color:var(--text);
+    display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; z-index:5;
+  }
+  .frame-icon-btn:hover{background:var(--accent); color:#171310;}
 
   .tally{margin-top:22px;}
   .tally h2{font-size:13px; color:var(--muted); font-weight:600; margin:0 0 10px;}
@@ -71,6 +88,7 @@
   .swatch{width:18px; height:18px; border-radius:4px; border:1px solid var(--line); flex-shrink:0;}
   .swatch-row .count{margin-left:auto; color:var(--muted);}
   .swatch-row .over{color:var(--accent);}
+  .suggest-banner{font-size:12px; color:var(--accent); background:rgba(232,149,47,.1); border:1px solid rgba(232,149,47,.35); border-radius:8px; padding:10px 12px; margin-bottom:10px; line-height:1.5;}
 
   .chips{display:flex; flex-wrap:wrap; gap:8px;}
   .chip{display:flex; align-items:center; gap:6px; background:var(--panel2); border:1px solid var(--line); border-radius:20px; padding:5px 10px 5px 6px; font-size:12px; cursor:pointer;}
@@ -114,8 +132,9 @@
 <body>
 
 <header>
-  <h1>Palette Squares</h1>
-  <p>Crop a photo into a square, press it into a fixed color palette with per-shade pixel budgets, then inspect the result one shade at a time. Everything — original photo, settings, and preview — is saved right in this browser's local storage.</p>
+  <h1>LEGO MOSAIC CREATOR</h1>
+  <p>Create LEGO Mosaic from any image. Define the pieces you have, or let it chose the pieces for you.</p>
+  <p>Any uploaded image is kept on your own device. Therefore they cannot be shared with others.</p>
   <div class="tabs">
     <button class="tab-btn active" data-view="editor" type="button">Editor</button>
     <button class="tab-btn" data-view="build" type="button">Build</button>
@@ -125,40 +144,41 @@
 
 <div class="view active" id="view-editor">
   <aside class="panel">
-    <div class="drop" id="drop">
-      <strong>Drop an image here</strong>
-      or click to choose a file
-      <input type="file" id="fileInput" accept="image/*" style="display:none;">
-    </div>
-
+    <input type="file" id="fileInput" accept="image/*" style="display:none;">
+    
     <div class="field">
-      <label>Output size (px, square) <span class="mono" id="sizeVal">64</span></label>
-      <input type="number" id="size" value="64" min="4" max="400">
+      <label>Output size (px)</label>
+      <div class="size-row">
+        <input type="number" id="sizeW" value="48" min="0" max="256" placeholder="W">
+        <span class="size-x">×</span>
+        <input type="number" id="sizeH" value="48" min="0" max="256" placeholder="H">
+      </div>
     </div>
     <div class="field">
       <label>Zoom <span class="mono" id="zoomVal">1.00×</span></label>
       <input type="range" id="zoom" min="1" max="6" step="0.05" value="1">
     </div>
-    <p class="hint">Drag the source preview to reposition it. Scroll over it to zoom.</p>
-    <button class="ghost" id="resetPosBtn" type="button">Reset position</button>
-
-    <label class="check"><input type="checkbox" id="grayscaleToggle" checked> Grayscale</label>
 
     <div class="field">
       <label>Brightness <span class="mono" id="brightVal">0</span></label>
-      <input type="range" id="brightness" min="-100" max="100" value="0">
+      <input type="range" id="brightness" min="-100" max="100" step="5" value="0">
     </div>
     <div class="field">
       <label>Contrast <span class="mono" id="contrastVal">0</span></label>
-      <input type="range" id="contrast" min="-100" max="100" value="0">
+      <input type="range" id="contrast" min="-100" max="100" step="5" value="0">
     </div>
-
-    <label class="check"><input type="checkbox" id="circularToggle"> Circular pixels</label>
+    <div class="field">
+      <label>Detail <span class="mono" id="sharpVal">25</span></label>
+      <input type="range" id="detail" min="-100" max="100" step="5" value="25">
+    </div>
+    
+    <label class="check"><input type="checkbox" id="grayscaleToggle" checked> Grayscale</label>
+    <label class="check"><input type="checkbox" id="circularToggle" checked> Circular pixels</label>
     <div class="field" id="plateColorField" style="display:none;">
       <label>Plate color (fills gaps between circles)</label>
       <div class="row">
-        <input type="color" id="plateColorSwatch" value="#141311">
-        <input type="text" id="plateColorIn" class="mono" value="#141311" maxlength="7" style="flex:1; width:auto;">
+        <input type="color" id="plateColorSwatch" value="#bbbbbb">
+        <input type="text" id="plateColorIn" class="mono" value="#bbbbbb" maxlength="7" style="flex:1; width:auto;">
       </div>
     </div>
 
@@ -168,39 +188,42 @@
       <div class="layer-list" id="layerList"></div>
       <button class="ghost" id="addLayerBtn" type="button" style="margin-top:8px;">+ add layer</button>
     </div>
-    <p class="hint" id="contentHint">Content area: 64×64px</p>
-    <p class="hint">Each layer is one pixel-wide ring, solid color, and always square — even when circular pixels are on. Identical adjacent colors just read as one thicker ring.</p>
 
     <div class="palette">
       <div class="palette-head">
-        <label>Color scale &amp; max pixels</label>
-        <button type="button" id="addColor">+ shade</button>
+        <label>Colors and amount</label>
+        <button type="button" id="addColor">Add color</button>
       </div>
       <div id="paletteList"></div>
       <p class="hint" id="capacityHint"></p>
     </div>
 
-    <label class="check"><input type="checkbox" id="liveQuantize"> Live quantize (auto re-run on any change)</label>
-
-    <button class="primary" id="runBtn">Quantize</button>
-    <button class="ghost" id="downloadBtn" disabled>Download SVG</button>
+    <div class="render-row">
+      <button class="primary" id="runBtn">Render</button>
+      <label class="live-check" id="liveCheckLabel"><input type="checkbox" id="liveRender" checked="true"> Live</label>
+    </div>
     <button class="ghost" id="sendBuildBtn" disabled>Send to Build →</button>
-    <button class="ghost" id="saveBtn" disabled>Save to Gallery</button>
+    <div class="btn-row">
+      <button class="ghost" id="downloadBtn" disabled>Download SVG</button>
+      <button class="ghost" id="saveBtn" disabled>Save to Gallery</button>
+    </div>
   </aside>
 
   <main class="stage">
     <div class="canvases">
       <figure>
-        <figcaption>Source (drag to reposition, scroll to zoom)</figcaption>
-        <div class="frame draggable" id="srcFrame"><div class="placeholder">No image yet</div></div>
+        <div class="frame draggable empty" id="srcFrame">
+          <div class="placeholder" id="srcPlaceholder">Click or drop an image here</div>
+          <button type="button" id="refreshImageBtn" class="frame-icon-btn" style="display:none;" title="Choose another image">⟳</button>
+        </div>
       </figure>
       <figure>
-        <figcaption>Result (SVG)</figcaption>
-        <div class="frame" id="outFrame"><div class="placeholder">Press Quantize</div></div>
+        <div class="frame" id="outFrame"><div class="placeholder">Press Render</div></div>
       </figure>
     </div>
     <div class="tally" id="tallyWrap" style="display:none;">
-      <h2>Pixels used per shade</h2>
+      <h2>Pixels used per color</h2>
+      <div class="suggest-banner" id="suggestBanner" style="display:none;"></div>
       <div id="tally"></div>
     </div>
   </main>
@@ -209,7 +232,7 @@
 <div class="view" id="view-build">
   <aside class="panel">
     <button class="ghost" id="backToEditorBtn" type="button">← Back to Editor</button>
-    <label style="font-size:12.5px; color:var(--muted); display:block; margin:16px 0 8px;">Show shade</label>
+    <label style="font-size:12.5px; color:var(--muted); display:block; margin:16px 0 8px;">Show color</label>
     <div class="chips" id="analyzeSwatches"></div>
 
     <label class="check"><input type="checkbox" id="gridToggle" checked> Show grid &amp; edge numbers</label>
@@ -224,7 +247,7 @@
 
   <main class="stage">
     <div class="canvas-wrap" id="canvasWrap">
-      <div class="placeholder" id="buildPlaceholder">Nothing to build yet. Quantize an image in Editor and click "Send to Build", or open a saved piece from Gallery.</div>
+      <div class="placeholder" id="buildPlaceholder">Nothing to build yet. Render an image in Editor and click "Send to Build", or open a saved piece from Gallery.</div>
       <div class="svg-stack" id="analyzeSvgWrap" style="display:none;"></div>
     </div>
   </main>
@@ -237,7 +260,7 @@
 <div class="modal" id="saveModal">
   <div class="modal-box">
     <h2>Save to gallery</h2>
-    <p class="hint">Stored entirely in this browser's local storage — clearing site data removes it.</p>
+    <p class="hint">Stored entirely in this browser's local storage — clearing site data removes it. The photo is compressed to fit, with detail kept inside your crop frame and reduced outside it.</p>
     <div class="field"><label>Name</label><input type="text" id="saveName" placeholder="My piece"></div>
     <p class="hint warn" id="saveError" style="display:none;"></p>
     <div class="modal-actions">
@@ -276,6 +299,16 @@
     return top;
   };
 
+  // Perceptually-weighted color distance (low-cost "redmean" approximation) — much better than
+  // plain RGB Euclidean for non-grayscale images, while ordering identically for grayscale ones.
+  function colorDistSq(r1,g1,b1,r2,g2,b2){
+    const rmean = (r1+r2)/2;
+    const dr=r1-r2, dg=g1-g2, db=b1-b2;
+    const wr = 2 + rmean/256;
+    const wb = 2 + (255-rmean)/256;
+    return wr*dr*dr + 4*dg*dg + wb*db*db;
+  }
+
   function quantize(pixelsRGB, palette){
     const n = pixelsRGB.length/3, k = palette.length;
     const remaining = palette.map(p=>p.max);
@@ -285,10 +318,7 @@
       let o = orderCache[i];
       if(!o){
         const r=pixelsRGB[i*3], g=pixelsRGB[i*3+1], b=pixelsRGB[i*3+2];
-        o = palette.map((p,idx)=>{
-          const dr=r-p.r, dg=g-p.g, db=b-p.b;
-          return [dr*dr+dg*dg+db*db, idx];
-        }).sort((a,b)=>a[0]-b[0]);
+        o = palette.map((p,idx)=> [colorDistSq(r,g,b,p.r,p.g,p.b), idx]).sort((a,b)=>a[0]-b[0]);
         orderCache[i] = o;
       }
       return o;
@@ -312,22 +342,48 @@
     return assigned;
   }
 
+  function rgbToHex(r,g,b){
+    const h = v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2,'0');
+    return '#'+h(r)+h(g)+h(b);
+  }
+
+  // Flags when a meaningful share of pixels are a poor match for every color in the palette,
+  // and suggests the average color of those poorly-matched pixels as something to add.
+  function analyzeMatchQuality(pixelsRGB, palette, assigned){
+    const n = pixelsRGB.length/3;
+    const threshold = 70; // plain (unweighted) Euclidean distance, 0-441 range
+    let badCount=0, sumR=0, sumG=0, sumB=0;
+    for(let i=0;i<n;i++){
+      const r=pixelsRGB[i*3], g=pixelsRGB[i*3+1], b=pixelsRGB[i*3+2];
+      const p = palette[assigned[i]];
+      const dr=r-p.r, dg=g-p.g, db=b-p.b;
+      if(Math.sqrt(dr*dr+dg*dg+db*db) > threshold){ badCount++; sumR+=r; sumG+=g; sumB+=b; }
+    }
+    const fraction = n ? badCount/n : 0;
+    if(badCount > 0 && fraction > 0.12){
+      return {suggest:true, hex: rgbToHex(sumR/badCount, sumG/badCount, sumB/badCount), fraction};
+    }
+    return {suggest:false};
+  }
+
+  // Plain result render: square or circular pixels per result.circular, plate color fills gaps. Border stays square always.
   function buildSvgMarkup(result, cellSize){
     const unit = cellSize || 1;
-    const {fullN, pixels, circular, plateColor} = result;
-    const dim = fullN*unit;
-    let s = '<svg xmlns="http://www.w3.org/2000/svg" width="'+dim+'" height="'+dim+'" viewBox="0 0 '+dim+' '+dim+'" shape-rendering="crispEdges">';
+    const {fullW, fullH, pixels, circular, plateColor} = result;
+    const dimW = fullW*unit, dimH = fullH*unit;
+    let s = '<svg xmlns="http://www.w3.org/2000/svg" width="'+dimW+'" height="'+dimH+'" viewBox="0 0 '+dimW+' '+dimH+'" shape-rendering="crispEdges">';
     if(circular){
-      s += '<rect x="0" y="0" width="'+dim+'" height="'+dim+'" fill="'+(plateColor||'#141311')+'"/>';
+      s += '<rect x="0" y="0" width="'+dimW+'" height="'+dimH+'" fill="'+(plateColor||'#141311')+'"/>';
     }
-    for(let i=0;i<fullN*fullN;i++){
-      const r = (i/fullN)|0, c = i%fullN;
-      const px = pixels[i];
-      const x = c*unit, y = r*unit;
-      if(circular && !px.isBorder){
-        s += '<circle cx="'+(x+unit/2)+'" cy="'+(y+unit/2)+'" r="'+(unit*0.47)+'" fill="'+px.hex+'"/>';
-      } else {
-        s += '<rect x="'+x+'" y="'+y+'" width="'+unit+'" height="'+unit+'" fill="'+px.hex+'"/>';
+    for(let r=0;r<fullH;r++){
+      for(let c=0;c<fullW;c++){
+        const px = pixels[r*fullW+c];
+        const x = c*unit, y = r*unit;
+        if(circular && !px.isBorder){
+          s += '<circle cx="'+(x+unit/2)+'" cy="'+(y+unit/2)+'" r="'+(unit*0.47)+'" fill="'+px.hex+'"/>';
+        } else {
+          s += '<rect x="'+x+'" y="'+y+'" width="'+unit+'" height="'+unit+'" fill="'+px.hex+'"/>';
+        }
       }
     }
     s += '</svg>';
@@ -342,36 +398,39 @@
   }
 
   function buildAnalysisSVG(result, o){
-    const {fullN, pixels, circular, plateColor} = result;
+    const {fullW, fullH, pixels, circular, plateColor} = result;
     const cell = o.cellSize, margin = o.gridOn ? 24 : 0;
-    const inner = fullN*cell, dim = inner + margin;
-    let s = '<svg id="analyzeSvg" xmlns="http://www.w3.org/2000/svg" width="'+dim+'" height="'+dim+'" viewBox="0 0 '+dim+' '+dim+'" shape-rendering="geometricPrecision">';
-    s += '<rect x="0" y="0" width="'+dim+'" height="'+dim+'" fill="#000"/>';
+    const innerW = fullW*cell, innerH = fullH*cell, dimW = innerW+margin, dimH = innerH+margin;
+    let s = '<svg id="analyzeSvg" xmlns="http://www.w3.org/2000/svg" width="'+dimW+'" height="'+dimH+'" viewBox="0 0 '+dimW+' '+dimH+'" shape-rendering="geometricPrecision">';
+    s += '<rect x="0" y="0" width="'+dimW+'" height="'+dimH+'" fill="#000"/>';
     if(circular){
-      s += '<rect x="'+margin+'" y="'+margin+'" width="'+inner+'" height="'+inner+'" fill="'+(plateColor||'#141311')+'"/>';
+      s += '<rect x="'+margin+'" y="'+margin+'" width="'+innerW+'" height="'+innerH+'" fill="'+(plateColor||'#141311')+'"/>';
     }
-    for(let i=0;i<fullN*fullN;i++){
-      const r = (i/fullN)|0, c = i%fullN;
-      const px = pixels[i];
-      const opacity = (o.select && !px.isBorder && px.hex.toLowerCase() !== o.select.toLowerCase()) ? 0.3 : 1;
-      const x = margin + c*cell, y = margin + r*cell;
-      if(circular && !px.isBorder){
-        s += '<circle cx="'+(x+cell/2)+'" cy="'+(y+cell/2)+'" r="'+(cell*0.47)+'" fill="'+px.hex+'" opacity="'+opacity+'"/>';
-      } else {
-        s += '<rect x="'+x+'" y="'+y+'" width="'+cell+'" height="'+cell+'" fill="'+px.hex+'" opacity="'+opacity+'" shape-rendering="crispEdges"/>';
+    for(let r=0;r<fullH;r++){
+      for(let c=0;c<fullW;c++){
+        const px = pixels[r*fullW+c];
+        const opacity = (o.select && !px.isBorder && px.hex.toLowerCase() !== o.select.toLowerCase()) ? 0.3 : 1;
+        const x = margin + c*cell, y = margin + r*cell;
+        if(circular && !px.isBorder){
+          s += '<circle cx="'+(x+cell/2)+'" cy="'+(y+cell/2)+'" r="'+(cell*0.47)+'" fill="'+px.hex+'" opacity="'+opacity+'"/>';
+        } else {
+          s += '<rect x="'+x+'" y="'+y+'" width="'+cell+'" height="'+cell+'" fill="'+px.hex+'" opacity="'+opacity+'" shape-rendering="crispEdges"/>';
+        }
       }
     }
     if(o.gridOn){
       s += '<g stroke="rgba(255,255,255,.14)" stroke-width="1">';
-      for(let i=0;i<=fullN;i++){
-        s += '<line x1="'+(margin+i*cell)+'" y1="'+margin+'" x2="'+(margin+i*cell)+'" y2="'+(margin+inner)+'"/>';
-        s += '<line x1="'+margin+'" y1="'+(margin+i*cell)+'" x2="'+(margin+inner)+'" y2="'+(margin+i*cell)+'"/>';
+      for(let i=0;i<=fullW;i++){
+        s += '<line x1="'+(margin+i*cell)+'" y1="'+margin+'" x2="'+(margin+i*cell)+'" y2="'+(margin+innerH)+'"/>';
+      }
+      for(let i=0;i<=fullH;i++){
+        s += '<line x1="'+margin+'" y1="'+(margin+i*cell)+'" x2="'+(margin+innerW)+'" y2="'+(margin+i*cell)+'"/>';
       }
       s += '</g>';
       const step = niceStep(cell);
       s += '<g fill="#ece7de" font-family="ui-monospace,monospace" font-size="10">';
-      for(let c=0;c<fullN;c+=step) s += '<text x="'+(margin+c*cell+cell/2)+'" y="'+(margin-8)+'" text-anchor="middle">'+c+'</text>';
-      for(let r=0;r<fullN;r+=step) s += '<text x="'+(margin-6)+'" y="'+(margin+r*cell+cell/2+3)+'" text-anchor="end">'+r+'</text>';
+      for(let c=0;c<fullW;c+=step) s += '<text x="'+(margin+c*cell+cell/2)+'" y="'+(margin-8)+'" text-anchor="middle">'+c+'</text>';
+      for(let r=0;r<fullH;r+=step) s += '<text x="'+(margin-6)+'" y="'+(margin+r*cell+cell/2+3)+'" text-anchor="end">'+r+'</text>';
       s += '</g>';
     }
     s += '<rect id="hoverRect" x="0" y="0" width="'+cell+'" height="'+cell+'" fill="none" stroke="#e8952f" stroke-width="2" style="display:none; pointer-events:none;"/>';
@@ -380,14 +439,14 @@
   }
 
   function reconstructResult(grid, palette, borderLayers, circular, plateColor){
-    const fullN = grid.fullN, cells = grid.cells;
-    const pixels = new Array(fullN*fullN);
+    const fullW = grid.fullW, fullH = grid.fullH, cells = grid.cells;
+    const pixels = new Array(fullW*fullH);
     for(let i=0;i<cells.length;i++){
       const v = cells[i];
       if(v >= 0){ pixels[i] = {hex:palette[v].hex, isBorder:false}; }
       else { const ring = -v-1; pixels[i] = {hex:(borderLayers && borderLayers[ring]) || '#ffffff', isBorder:true}; }
     }
-    return {fullN, contentN:grid.contentN, pixels, circular:!!circular, plateColor: plateColor || '#141311'};
+    return {fullW, fullH, contentW:grid.contentW, contentH:grid.contentH, pixels, circular:!!circular, plateColor: plateColor || '#141311'};
   }
 
   function svgToDataUri(svgStr){
@@ -396,27 +455,83 @@
   function escapeHtml(str){
     const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
   }
+  function blobToDataURL(blob){
+    return new Promise((resolve,reject)=>{
+      const r = new FileReader();
+      r.onload = ()=> resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  }
 
-  const drop = $('drop'), fileInput = $('fileInput');
-  const sizeIn = $('size'), sizeVal = $('sizeVal');
-  const zoomIn = $('zoom'), zoomVal = $('zoomVal'), resetPosBtn = $('resetPosBtn');
+  // Draw a canvas where the whole image is passed through a heavily downscaled (blurred) copy,
+  // then the crop-frame region is redrawn at full detail on top. Used to compress gallery saves.
+  function buildDifferentialCanvas(image, frame, w, h, outsideScale){
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    const lowW = Math.max(4, Math.round(w*outsideScale));
+    const lowH = Math.max(4, Math.round(h*outsideScale));
+    const tmp = document.createElement('canvas');
+    tmp.width = lowW; tmp.height = lowH;
+    tmp.getContext('2d').drawImage(image, 0, 0, lowW, lowH);
+    ctx.drawImage(tmp, 0, 0, lowW, lowH, 0, 0, w, h);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(frame.x, frame.y, frame.w, frame.h);
+    ctx.clip();
+    ctx.drawImage(image, 0, 0, w, h);
+    ctx.restore();
+    return canvas;
+  }
+
+  async function compressForGallery(image, frame){
+    const maxBytes = 500*1024;
+    let outsideScale = 0.5, quality = 0.85, overallScale = 1;
+    let bestDataUrl = null, bestSize = Infinity;
+    for(let attempt=0; attempt<14; attempt++){
+      const w = Math.max(8, Math.round(image.width*overallScale));
+      const h = Math.max(8, Math.round(image.height*overallScale));
+      const scaledFrame = {
+        x: frame.x*overallScale, y: frame.y*overallScale,
+        w: frame.w*overallScale, h: frame.h*overallScale
+      };
+      const canvas = buildDifferentialCanvas(image, scaledFrame, w, h, outsideScale);
+      const blob = await new Promise(res=> canvas.toBlob(res, 'image/jpeg', quality));
+      if(blob && blob.size < bestSize){ bestSize = blob.size; bestDataUrl = await blobToDataURL(blob); }
+      if(blob && blob.size <= maxBytes) break;
+      if(quality > 0.4) quality -= 0.15;
+      else if(outsideScale > 0.06) outsideScale *= 0.5;
+      else { overallScale *= 0.75; quality = 0.6; outsideScale = 0.2; }
+    }
+    return bestDataUrl;
+  }
+
+  // ================= EDITOR =================
+  const fileInput = $('fileInput');
+  const sizeWIn = $('sizeW'), sizeHIn = $('sizeH');
+  const zoomIn = $('zoom'), zoomVal = $('zoomVal');
   const grayscaleToggle = $('grayscaleToggle');
   const brightIn = $('brightness'), brightVal = $('brightVal');
   const contrastIn = $('contrast'), contrastVal = $('contrastVal');
+  const sharpIn = $('detail'), sharpVal = $('sharpVal');
   const circularToggle = $('circularToggle'), plateColorField = $('plateColorField');
   const plateColorSwatch = $('plateColorSwatch'), plateColorIn = $('plateColorIn');
   const borderToggle = $('borderToggle'), borderLayersField = $('borderLayersField');
-  const layerList = $('layerList'), addLayerBtn = $('addLayerBtn'), contentHint = $('contentHint');
+  const layerList = $('layerList'), addLayerBtn = $('addLayerBtn');
   const paletteList = $('paletteList'), capacityHint = $('capacityHint');
-  const srcFrame = $('srcFrame'), outFrame = $('outFrame');
+  const srcFrame = $('srcFrame'), srcPlaceholder = $('srcPlaceholder'), refreshImageBtn = $('refreshImageBtn');
+  const outFrame = $('outFrame');
   const runBtn = $('runBtn'), downloadBtn = $('downloadBtn'), sendBuildBtn = $('sendBuildBtn'), saveBtn = $('saveBtn');
-  const tallyWrap = $('tallyWrap'), tally = $('tally');
-  const liveQuantize = $('liveQuantize');
+  const tallyWrap = $('tallyWrap'), tally = $('tally'), suggestBanner = $('suggestBanner');
+  const liveRender = $('liveRender'), liveCheckLabel = $('liveCheckLabel');
   const saveModal = $('saveModal'), saveName = $('saveName'), saveError = $('saveError');
   const saveCancel = $('saveCancel'), saveConfirm = $('saveConfirm');
 
+  const MAX_AUTO = 128;
+
   let img = null, srcCanvas = null;
-  let zoom = 1, panX = 0, panY = 0, dragging = false, lastX = 0, lastY = 0;
+  let zoom = 1, panX = 0, panY = 0;
   let lastPalette = null, lastResult = null;
   let layers = [];
 
@@ -482,12 +597,12 @@
   });
 
   let autoTimer = null;
-  function scheduleAutoQuantize(){
-    if(!liveQuantize.checked || !srcCanvas) return;
+  function scheduleAutoRender(){
+    if(!liveRender.checked || liveRender.disabled || !srcCanvas) return;
     clearTimeout(autoTimer);
-    autoTimer = setTimeout(performQuantize, 150);
+    autoTimer = setTimeout(performRender, 150);
   }
-  liveQuantize.addEventListener('change', ()=>{ if(liveQuantize.checked) scheduleAutoQuantize(); });
+  liveRender.addEventListener('change', ()=>{ if(liveRender.checked) scheduleAutoRender(); });
 
   function addRow(hex, max){
     const row = document.createElement('div');
@@ -522,35 +637,62 @@
     });
   }
 
-  function computeContentN(){
-    const N = Math.max(4, Math.min(400, parseInt(sizeIn.value,10) || 64));
-    const maxBorder = Math.floor((N-1)/2);
+  function computeContentSize(){
+    const W = Math.max(4, Math.min(400, parseInt(sizeWIn.value,10) || 64));
+    const H = Math.max(4, Math.min(400, parseInt(sizeHIn.value,10) || 64));
+    const maxBorder = Math.floor((Math.min(W,H)-1)/2);
     const rawCount = borderToggle.checked ? layers.length : 0;
     const borderCount = Math.min(rawCount, maxBorder);
-    return {N, borderCount, contentN: N - 2*borderCount};
+    return {W, H, borderCount, contentW: W-2*borderCount, contentH: H-2*borderCount};
+  }
+
+  function applyFrameAspect(){
+    const {W, H, contentW, contentH} = computeContentSize();
+    outFrame.style.aspectRatio = W+' / '+H;
+    srcFrame.style.aspectRatio = contentW+' / '+contentH;
+  }
+
+  function updateLiveAvailability(){
+    const {W,H} = computeContentSize();
+    const tooBig = W > MAX_AUTO || H > MAX_AUTO;
+    liveRender.disabled = tooBig;
+    liveCheckLabel.classList.toggle('disabled', tooBig);
+    liveCheckLabel.title = tooBig ? 'Live render turns off automatically above '+MAX_AUTO+'×'+MAX_AUTO+' for performance.' : '';
+    if(tooBig && liveRender.checked) liveRender.checked = false;
   }
 
   function updateHint(){
-    const {contentN} = computeContentN();
-    const total = contentN*contentN;
+    updateLiveAvailability();
+    applyFrameAspect();
+    const {contentW, contentH} = computeContentSize();
+    const total = contentW*contentH;
     const palette = readPalette();
     const capped = palette.filter(p=>p.max !== Infinity);
     const sum = capped.reduce((s,p)=>s+p.max, 0);
     const anyUnlimited = capped.length < palette.length;
     if(!anyUnlimited && sum < total){
-      capacityHint.textContent = 'Total capacity ('+sum+') is less than the '+total+' content pixels needed — extra pixels fall back to their nearest shade regardless of its cap.';
+      capacityHint.textContent = 'Total capacity ('+sum+') is less than the '+total+' content pixels needed — extra pixels fall back to their nearest color regardless of its cap.';
       capacityHint.className = 'hint warn';
     } else {
-      capacityHint.textContent = total+' content pixels available across the palette.';
+      capacityHint.textContent = total+' pieces are required for this size.';
       capacityHint.className = 'hint';
     }
-    scheduleAutoQuantize();
+    scheduleAutoRender();
   }
 
-  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('over'); }));
-  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('over'); }));
-  drop.addEventListener('drop', e=>{ const f = e.dataTransfer.files[0]; if(f) loadFile(f); });
-  drop.addEventListener('click', ()=> fileInput.click());
+  // ---- source frame: click/drop to add, drag to pan, pinch/scroll to zoom, refresh icon to swap ----
+  srcFrame.addEventListener('dragover', e=>{ e.preventDefault(); srcFrame.classList.add('drag-over'); });
+  srcFrame.addEventListener('dragenter', e=>{ e.preventDefault(); srcFrame.classList.add('drag-over'); });
+  srcFrame.addEventListener('dragleave', ()=> srcFrame.classList.remove('drag-over'));
+  srcFrame.addEventListener('drop', e=>{
+    e.preventDefault(); srcFrame.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0]; if(f) loadFile(f);
+  });
+  srcFrame.addEventListener('click', e=>{
+    if(e.target === refreshImageBtn) return;
+    if(!img) fileInput.click();
+  });
+  refreshImageBtn.addEventListener('click', e=>{ e.stopPropagation(); fileInput.click(); });
   fileInput.addEventListener('change', e=>{ if(e.target.files[0]) loadFile(e.target.files[0]); });
 
   function loadFile(file){
@@ -560,6 +702,7 @@
       image.onload = ()=>{
         img = image; zoom = 1; panX = 0; panY = 0;
         zoomIn.value = 1; zoomVal.textContent = '1.00×';
+        srcFrame.classList.remove('empty');
         renderSource();
       };
       image.src = e.target.result;
@@ -567,32 +710,81 @@
     reader.readAsDataURL(file);
   }
 
-  function cropSide(){ return Math.min(img.width, img.height) / zoom; }
+  // Largest box of the content's aspect ratio that fits in the image ("contain"), then shrunk by zoom.
+  function cropBox(){
+    const {contentW, contentH} = computeContentSize();
+    const aspect = contentW / contentH;
+    let boxW, boxH;
+    if(img.width / img.height > aspect){ boxH = img.height; boxW = boxH*aspect; }
+    else { boxW = img.width; boxH = boxW/aspect; }
+    return {boxW: boxW/zoom, boxH: boxH/zoom};
+  }
+  function currentCropRect(){
+    const {boxW, boxH} = cropBox();
+    const cx = img.width/2 + panX, cy = img.height/2 + panY;
+    let x = cx - boxW/2, y = cy - boxH/2;
+    x = Math.max(0, Math.min(img.width - boxW, x));
+    y = Math.max(0, Math.min(img.height - boxH, y));
+    return {x, y, w: boxW, h: boxH};
+  }
   function clampPan(){
-    const side = cropSide();
-    const maxX = Math.max(0, (img.width - side) / 2);
-    const maxY = Math.max(0, (img.height - side) / 2);
+    const {boxW, boxH} = cropBox();
+    const maxX = Math.max(0, (img.width - boxW) / 2);
+    const maxY = Math.max(0, (img.height - boxH) / 2);
     panX = Math.max(-maxX, Math.min(maxX, panX));
     panY = Math.max(-maxY, Math.min(maxY, panY));
   }
 
+  const activePointers = new Map();
+  let dragging = false, lastX = 0, lastY = 0;
+  let pinchStartDist = 0, pinchStartZoom = 1;
+
   srcFrame.addEventListener('pointerdown', e=>{
     if(!img) return;
-    dragging = true; lastX = e.clientX; lastY = e.clientY;
-    srcFrame.setPointerCapture(e.pointerId); srcFrame.classList.add('dragging');
+    srcFrame.setPointerCapture(e.pointerId);
+    activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if(activePointers.size === 1){
+      dragging = true; lastX = e.clientX; lastY = e.clientY;
+      srcFrame.classList.add('dragging');
+    } else if(activePointers.size === 2){
+      dragging = false;
+      const pts = [...activePointers.values()];
+      pinchStartDist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+      pinchStartZoom = zoom;
+    }
   });
   srcFrame.addEventListener('pointermove', e=>{
-    if(!dragging || !img) return;
-    const rect = srcFrame.getBoundingClientRect();
-    const scale = cropSide() / rect.width;
-    panX -= (e.clientX - lastX) * scale;
-    panY -= (e.clientY - lastY) * scale;
-    lastX = e.clientX; lastY = e.clientY;
-    clampPan(); renderSource();
+    if(!img || !activePointers.has(e.pointerId)) return;
+    activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if(activePointers.size >= 2){
+      const pts = [...activePointers.values()];
+      const dist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+      if(pinchStartDist > 0){
+        zoom = Math.max(1, Math.min(6, pinchStartZoom * (dist/pinchStartDist)));
+        zoomIn.value = zoom.toFixed(2); zoomVal.textContent = zoom.toFixed(2)+'×';
+        clampPan(); renderSource();
+      }
+    } else if(dragging){
+      const rect = srcFrame.getBoundingClientRect();
+      const {boxW, boxH} = cropBox();
+      panX -= (e.clientX - lastX) * (boxW/rect.width);
+      panY -= (e.clientY - lastY) * (boxH/rect.height);
+      lastX = e.clientX; lastY = e.clientY;
+      clampPan(); renderSource();
+    }
   });
-  ['pointerup','pointercancel','pointerleave'].forEach(ev=>srcFrame.addEventListener(ev, ()=>{
-    dragging = false; srcFrame.classList.remove('dragging');
-  }));
+  function endPointer(e){
+    activePointers.delete(e.pointerId);
+    if(activePointers.size < 2) pinchStartDist = 0;
+    if(activePointers.size === 1){
+      const pt = [...activePointers.values()][0];
+      dragging = true; lastX = pt.x; lastY = pt.y;
+    } else if(activePointers.size === 0){
+      dragging = false; srcFrame.classList.remove('dragging');
+    }
+  }
+  ['pointerup','pointercancel','pointerleave'].forEach(ev=>srcFrame.addEventListener(ev, endPointer));
+
   srcFrame.addEventListener('wheel', e=>{
     if(!img) return;
     e.preventDefault();
@@ -605,10 +797,6 @@
     zoom = parseFloat(zoomIn.value); zoomVal.textContent = zoom.toFixed(2)+'×';
     clampPan(); renderSource();
   });
-  resetPosBtn.addEventListener('click', ()=>{
-    zoom = 1; panX = 0; panY = 0; zoomIn.value = 1; zoomVal.textContent = '1.00×';
-    renderSource();
-  });
 
   function adjust(value, brightness, contrast){
     const c = contrast*2.55;
@@ -617,23 +805,60 @@
     return Math.min(255, Math.max(0, v));
   }
 
+  // Positive = unsharp-mask style sharpen; negative = box blur. 0 = no-op.
+  function applyDetail(data, w, h, amount){
+    if(!amount) return;
+    const src = new Uint8ClampedArray(data);
+    const px = (x,y,ch) => {
+      x = Math.max(0, Math.min(w-1, x)); y = Math.max(0, Math.min(h-1, y));
+      return src[(y*w+x)*4+ch];
+    };
+    if(amount > 0){
+      const k = (amount/100) * 1.2;
+      for(let y=0;y<h;y++){
+        for(let x=0;x<w;x++){
+          const idx = (y*w+x)*4;
+          for(let ch=0; ch<3; ch++){
+            const c = src[idx+ch];
+            const v = c + k*(4*c - px(x,y-1,ch) - px(x,y+1,ch) - px(x-1,y,ch) - px(x+1,y,ch));
+            data[idx+ch] = Math.max(0, Math.min(255, v));
+          }
+        }
+      }
+    } else {
+      const radius = Math.max(1, Math.round((-amount/100)*3));
+      for(let y=0;y<h;y++){
+        for(let x=0;x<w;x++){
+          const idx = (y*w+x)*4;
+          for(let ch=0; ch<3; ch++){
+            let sum = 0, count = 0;
+            for(let dy=-radius; dy<=radius; dy++){
+              for(let dx=-radius; dx<=radius; dx++){ sum += px(x+dx,y+dy,ch); count++; }
+            }
+            data[idx+ch] = sum/count;
+          }
+        }
+      }
+    }
+  }
+
   function renderSource(){
     if(!img) return;
-    const {N, borderCount, contentN} = computeContentN();
-    sizeIn.value = N; sizeVal.textContent = N;
-    contentHint.textContent = 'Content area: '+contentN+'×'+contentN+'px (border eats into the '+N+'px square)';
+    const {W, H, contentW, contentH} = computeContentSize();
+    sizeWIn.value = W; sizeHIn.value = H;
+    applyFrameAspect();
 
-    if(!srcCanvas){ srcCanvas = document.createElement('canvas'); srcFrame.innerHTML=''; srcFrame.appendChild(srcCanvas); }
-    srcCanvas.width = contentN; srcCanvas.height = contentN;
+    srcPlaceholder.style.display = 'none';
+    refreshImageBtn.style.display = 'flex';
+
+    if(!srcCanvas){ srcCanvas = document.createElement('canvas'); srcFrame.insertBefore(srcCanvas, srcPlaceholder); }
+    srcCanvas.width = contentW; srcCanvas.height = contentH;
     const ctx = srcCanvas.getContext('2d');
-    const side = cropSide();
-    const cx = img.width/2 + panX, cy = img.height/2 + panY;
-    let sx = cx - side/2, sy = cy - side/2;
-    sx = Math.max(0, Math.min(img.width - side, sx));
-    sy = Math.max(0, Math.min(img.height - side, sy));
-    ctx.drawImage(img, sx, sy, side, side, 0, 0, contentN, contentN);
+    const {x:sx, y:sy, w:boxW, h:boxH} = currentCropRect();
+    ctx.drawImage(img, sx, sy, boxW, boxH, 0, 0, contentW, contentH);
 
-    const data = ctx.getImageData(0,0,contentN,contentN);
+    const data = ctx.getImageData(0,0,contentW,contentH);
+    applyDetail(data.data, contentW, contentH, parseInt(sharpIn.value,10));
     const brightness = parseInt(brightIn.value,10), contrast = parseInt(contrastIn.value,10);
     const grayOn = grayscaleToggle.checked;
     const d = data.data;
@@ -644,50 +869,50 @@
     }
     ctx.putImageData(data,0,0);
     downloadBtn.disabled = true; sendBuildBtn.disabled = true; saveBtn.disabled = true;
-    outFrame.innerHTML = '<div class="placeholder">Press Quantize</div>';
+    outFrame.innerHTML = '<div class="placeholder">Press Render</div>';
     lastResult = null;
     tallyWrap.style.display = 'none';
-    scheduleAutoQuantize();
+    scheduleAutoRender();
   }
 
-  [sizeIn, brightIn, contrastIn].forEach(el=>{
+  [sizeWIn, sizeHIn, brightIn, contrastIn, sharpIn].forEach(el=>{
     el.addEventListener('input', ()=>{
-      brightVal.textContent = brightIn.value; contrastVal.textContent = contrastIn.value;
+      brightVal.textContent = brightIn.value; contrastVal.textContent = contrastIn.value; sharpVal.textContent = sharpIn.value;
       renderSource(); updateHint();
     });
   });
   grayscaleToggle.addEventListener('change', renderSource);
 
-  function performQuantize(){
-    const contentN = srcCanvas.width;
-    const N = parseInt(sizeIn.value,10);
-    const {borderCount} = computeContentN();
+  function performRender(){
+    const contentW = srcCanvas.width, contentH = srcCanvas.height;
+    const W = parseInt(sizeWIn.value,10), H = parseInt(sizeHIn.value,10);
+    const {borderCount} = computeContentSize();
     const activeLayers = borderToggle.checked ? layers.slice(0, borderCount).map(l=>l.hex) : [];
 
     const ctx = srcCanvas.getContext('2d');
-    const imgData = ctx.getImageData(0,0,contentN,contentN).data;
-    const pixelsRGB = new Uint8ClampedArray(contentN*contentN*3);
+    const imgData = ctx.getImageData(0,0,contentW,contentH).data;
+    const pixelsRGB = new Uint8ClampedArray(contentW*contentH*3);
     for(let i=0,p=0;i<imgData.length;i+=4,p++){ pixelsRGB[p*3]=imgData[i]; pixelsRGB[p*3+1]=imgData[i+1]; pixelsRGB[p*3+2]=imgData[i+2]; }
 
     const palette = readPalette();
     lastPalette = palette;
     const assigned = quantize(pixelsRGB, palette);
     const counts = new Array(palette.length).fill(0);
-    for(let p=0;p<contentN*contentN;p++) counts[assigned[p]]++;
+    for(let p=0;p<contentW*contentH;p++) counts[assigned[p]]++;
 
-    const fullN = N;
-    const pixels = new Array(fullN*fullN);
-    const cells = new Array(fullN*fullN);
-    for(let r=0;r<fullN;r++){
-      for(let c=0;c<fullN;c++){
-        const idx = r*fullN+c;
-        const ring = Math.min(r, c, fullN-1-r, fullN-1-c);
+    const fullW = W, fullH = H;
+    const pixels = new Array(fullW*fullH);
+    const cells = new Array(fullW*fullH);
+    for(let r=0;r<fullH;r++){
+      for(let c=0;c<fullW;c++){
+        const idx = r*fullW+c;
+        const ring = Math.min(r, c, fullH-1-r, fullW-1-c);
         if(ring < activeLayers.length){
           pixels[idx] = {hex: activeLayers[ring], isBorder:true};
           cells[idx] = -(ring+1);
         } else {
           const rr = r - activeLayers.length, cc = c - activeLayers.length;
-          const p = rr*contentN + cc;
+          const p = rr*contentW + cc;
           const ci = assigned[p];
           pixels[idx] = {hex: palette[ci].hex, isBorder:false};
           cells[idx] = ci;
@@ -695,7 +920,7 @@
       }
     }
     lastResult = {
-      fullN, contentN, pixels, cells,
+      fullW, fullH, contentW, contentH, pixels, cells,
       circular: circularToggle.checked, plateColor: plateColorIn.value
     };
 
@@ -709,12 +934,27 @@
         '<span class="count'+(over?' over':'')+'">'+counts[idx]+' / '+maxLabel+'</span></div>';
     }).join('');
     tallyWrap.style.display = 'block';
+
+    const quality = analyzeMatchQuality(pixelsRGB, palette, assigned);
+    if(quality.suggest){
+      suggestBanner.innerHTML =
+        'This palette matches poorly on about '+Math.round(quality.fraction*100)+'% of pixels. '+
+        'Consider adding a color — maybe <span class="sw" style="background:'+quality.hex+'; display:inline-block; vertical-align:middle;"></span> '+
+        '<span class="mono">'+quality.hex+'</span>. '+
+        '<button type="button" id="addSuggestedColor" class="ghost" style="width:auto; display:inline-block; padding:4px 10px; margin:6px 0 0;">Add this color</button>';
+      suggestBanner.style.display = 'block';
+      $('addSuggestedColor').addEventListener('click', ()=>{ addRow(quality.hex, ''); updateHint(); suggestBanner.style.display='none'; });
+    } else {
+      suggestBanner.style.display = 'none';
+      suggestBanner.innerHTML = '';
+    }
+
     downloadBtn.disabled = false; sendBuildBtn.disabled = false; saveBtn.disabled = false;
   }
 
   runBtn.addEventListener('click', ()=>{
-    if(!srcCanvas){ alert('Drop an image first.'); return; }
-    performQuantize();
+    if(!srcCanvas){ alert('Add an image first — click or drop one onto the source preview.'); return; }
+    performRender();
   });
 
   downloadBtn.addEventListener('click', ()=>{
@@ -730,8 +970,8 @@
   sendBuildBtn.addEventListener('click', ()=>{
     if(!lastResult) return;
     analysis.result = {
-      fullN:lastResult.fullN, contentN:lastResult.contentN, pixels:lastResult.pixels,
-      circular:lastResult.circular, plateColor:lastResult.plateColor
+      fullW:lastResult.fullW, fullH:lastResult.fullH, contentW:lastResult.contentW, contentH:lastResult.contentH,
+      pixels:lastResult.pixels, circular:lastResult.circular, plateColor:lastResult.plateColor
     };
     analysis.palette = lastPalette.map(p=>({hex:p.hex}));
     analysis.selected = null;
@@ -742,13 +982,6 @@
     switchTab('build');
   });
 
-  function imageToDataURL(image){
-    const c = document.createElement('canvas');
-    c.width = image.naturalWidth || image.width;
-    c.height = image.naturalHeight || image.height;
-    c.getContext('2d').drawImage(image, 0, 0);
-    return c.toDataURL('image/png');
-  }
   function openModal(){ saveError.style.display='none'; saveName.value=''; saveModal.classList.add('open'); }
   function closeModal(){ saveModal.classList.remove('open'); }
   function showError(msg){ saveError.textContent = msg; saveError.style.display='block'; }
@@ -757,7 +990,7 @@
   saveCancel.addEventListener('click', closeModal);
   saveModal.addEventListener('click', e=>{ if(e.target === saveModal) closeModal(); });
 
-  saveConfirm.addEventListener('click', ()=>{
+  saveConfirm.addEventListener('click', async ()=>{
     if(!lastResult) return;
     const name = saveName.value.trim();
     if(!name){ showError('Enter a name.'); return; }
@@ -765,30 +998,36 @@
     const selected = (analysis.selected && lastPalette.some(p=>p.hex.toLowerCase()===analysis.selected.toLowerCase()))
       ? analysis.selected : null;
 
-    const id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-    const item = {
-      id, name, created: new Date().toISOString(),
-      originalDataUrl: imageToDataURL(img),
-      crop: {size: parseInt(sizeIn.value,10), zoom, panX, panY},
-      adjust: {brightness: parseInt(brightIn.value,10), contrast: parseInt(contrastIn.value,10)},
-      grayscale: grayscaleToggle.checked,
-      circular: lastResult.circular,
-      plateColor: lastResult.plateColor,
-      borderOn: borderToggle.checked,
-      borderLayers: layers.map(l=>l.hex),
-      palette: lastPalette.map(p=>({hex:p.hex, max: p.max===Infinity ? null : p.max})),
-      grid: {fullN:lastResult.fullN, contentN:lastResult.contentN, cells:Array.from(lastResult.cells)},
-      build: {gridOn:gridToggle.checked, cellSize:parseInt(cellSizeIn.value,10), selected},
-      previewSvg: buildAnalysisSVG(lastResult, {cellSize:6, gridOn:false, select:selected})
-    };
+    saveConfirm.disabled = true; saveCancel.disabled = true;
+    const origLabel = saveConfirm.textContent; saveConfirm.textContent = 'Compressing…';
     try{
+      const frame = currentCropRect();
+      const originalDataUrl = await compressForGallery(img, frame);
+      if(!originalDataUrl) throw new Error('Could not compress the image.');
+
+      const id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+      const item = {
+        id, name, created: new Date().toISOString(),
+        originalDataUrl,
+        crop: {width: parseInt(sizeWIn.value,10), height: parseInt(sizeHIn.value,10), zoom, panX, panY},
+        adjust: {brightness: parseInt(brightIn.value,10), contrast: parseInt(contrastIn.value,10), detail: parseInt(sharpIn.value,10)},
+        grayscale: grayscaleToggle.checked,
+        circular: lastResult.circular,
+        plateColor: lastResult.plateColor,
+        borderOn: borderToggle.checked,
+        borderLayers: layers.map(l=>l.hex),
+        palette: lastPalette.map(p=>({hex:p.hex, max: p.max===Infinity ? null : p.max})),
+        grid: {fullW:lastResult.fullW, fullH:lastResult.fullH, contentW:lastResult.contentW, contentH:lastResult.contentH, cells:Array.from(lastResult.cells)},
+        build: {gridOn:gridToggle.checked, cellSize:parseInt(cellSizeIn.value,10), selected},
+        previewSvg: buildAnalysisSVG(lastResult, {cellSize:6, gridOn:false, select:selected})
+      };
       localStorage.setItem('paletteApp.gallery.'+id, JSON.stringify(item));
+      closeModal();
+      switchTab('gallery');
     } catch(e){
-      showError("Could not save — this browser's local storage is full. Try a smaller image, fewer saves, or a smaller output size.");
-      return;
+      showError((e && e.message) || "Could not save — this browser's local storage may be full.");
     }
-    closeModal();
-    switchTab('gallery');
+    saveConfirm.disabled = false; saveCancel.disabled = false; saveConfirm.textContent = origLabel;
   });
 
   function loadItemIntoEditor(id){
@@ -797,7 +1036,7 @@
     const it = JSON.parse(raw);
     paletteList.innerHTML = '';
     (it.palette || []).forEach(p => addRow(p.hex, p.max == null ? '' : p.max));
-    sizeIn.value = it.crop.size; sizeVal.textContent = it.crop.size;
+    sizeWIn.value = it.crop.width; sizeHIn.value = it.crop.height;
     grayscaleToggle.checked = it.grayscale !== false;
     circularToggle.checked = !!it.circular;
     plateColorIn.value = it.plateColor || '#141311'; plateColorSwatch.value = plateColorIn.value;
@@ -808,11 +1047,12 @@
     borderLayersField.style.display = borderToggle.checked ? 'block' : 'none';
     brightIn.value = it.adjust.brightness || 0; brightVal.textContent = it.adjust.brightness || 0;
     contrastIn.value = it.adjust.contrast || 0; contrastVal.textContent = it.adjust.contrast || 0;
+    sharpIn.value = it.adjust.detail || 0; sharpVal.textContent = it.adjust.detail || 0;
     zoom = it.crop.zoom || 1; panX = it.crop.panX || 0; panY = it.crop.panY || 0;
     zoomIn.value = zoom; zoomVal.textContent = zoom.toFixed(2)+'×';
 
     const image = new Image();
-    image.onload = ()=>{ img = image; renderSource(); switchTab('editor'); };
+    image.onload = ()=>{ img = image; srcFrame.classList.remove('empty'); renderSource(); switchTab('editor'); };
     image.src = it.originalDataUrl;
     updateHint();
   }
@@ -820,6 +1060,7 @@
   addRow('#101010',980); addRow('#252529',980); addRow('#282424',980); addRow('#505762',980); addRow('#a0a0a0',980); addRow('#f5f5f0',980);
   updateHint();
 
+  // ================= BUILD =================
   const analyzeSwatches = $('analyzeSwatches'), gridToggle = $('gridToggle');
   const cellSizeIn = $('cellSize'), cellSizeVal = $('cellSizeVal'), hoverReadout = $('hoverReadout');
   const buildPlaceholder = $('buildPlaceholder'), analyzeSvgWrap = $('analyzeSvgWrap'), canvasWrap = $('canvasWrap');
@@ -848,13 +1089,13 @@
     const svgEl = analyzeSvgWrap.querySelector('#analyzeSvg');
     const hoverRect = analyzeSvgWrap.querySelector('#hoverRect');
     if(!svgEl || !analysis.result) return;
-    const n = analysis.result.fullN;
+    const w = analysis.result.fullW, h = analysis.result.fullH;
     svgEl.addEventListener('mousemove', e=>{
       const cell = parseInt(cellSizeIn.value,10), margin = gridToggle.checked ? 24 : 0;
       const rect = svgEl.getBoundingClientRect();
       const mx = e.clientX - rect.left, my = e.clientY - rect.top;
       const col = Math.floor((mx-margin)/cell), row = Math.floor((my-margin)/cell);
-      if(col>=0 && col<n && row>=0 && row<n){
+      if(col>=0 && col<w && row>=0 && row<h){
         hoverReadout.textContent = 'x: '+col+', y: '+row;
         hoverRect.setAttribute('x', margin+col*cell+1);
         hoverRect.setAttribute('y', margin+row*cell+1);
@@ -923,7 +1164,7 @@
     const bs = it.build || {};
     analysis.selected = bs.selected || null;
     gridToggle.checked = bs.gridOn !== false;
-    cellSizeIn.value = bs.cellSize || Math.max(4, Math.min(30, Math.floor(560/analysis.result.fullN)));
+    cellSizeIn.value = bs.cellSize || Math.max(4, Math.min(30, Math.floor(560/Math.max(analysis.result.fullW, analysis.result.fullH))));
     cellSizeVal.textContent = cellSizeIn.value+'px';
     buildPlaceholder.style.display = 'none';
     analyzeSvgWrap.style.display = 'inline-block';
@@ -932,6 +1173,7 @@
     switchTab('build');
   }
 
+  // ================= GALLERY =================
   const galleryGrid = $('galleryGrid');
 
   function collectGalleryItems(){
@@ -945,7 +1187,7 @@
   function renderGallery(){
     const items = collectGalleryItems();
     if(!items.length){
-      galleryGrid.innerHTML = '<p class="gallery-empty">Nothing saved yet. Quantize something in Editor and save it here.</p>';
+      galleryGrid.innerHTML = '<p class="gallery-empty">Nothing saved yet. Render something in Editor and save it here.</p>';
       return;
     }
     galleryGrid.innerHTML = items.map(it => (
